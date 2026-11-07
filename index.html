@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tffere Strike · Depot</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="vignette"></div>
+    <div id="damage"></div>
+    <header id="topbar">
+      <div class="brand">
+        TFFERE <b>STRIKE</b><small>TACTICAL TRAINING / PROTOTYPE</small>
+      </div>
+      <div class="mission">
+        <span>DEPOT / SECTOR 07</span><strong>ELIMINATE THE PATROL</strong>
+      </div>
+      <div class="round"><small>ROUND TIME</small><b id="timer">03:00</b></div>
+    </header>
+    <aside id="radar">
+      <canvas id="minimap" width="170" height="170"></canvas
+      ><span>N / DEPOT</span>
+    </aside>
+    <div id="scope">
+      <div class="scope-lens">
+        <i class="reticle-h"></i><i class="reticle-v"></i><b></b
+        ><span>AW-9 / 6×</span>
+      </div>
+    </div>
+    <div id="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
+    <div id="hitmarker">×</div>
+    <div id="message"></div>
+    <div id="feed"></div>
+    <footer id="hud">
+      <div class="metric">
+        <small>HEALTH</small><b><span id="health">100</span><em>+</em></b>
+        <div class="health-track"><i id="healthbar"></i></div>
+      </div>
+      <div class="objective">
+        <small>HOSTILES REMAINING</small
+        ><b><span id="remaining">6</span><em> / 06</em></b>
+      </div>
+      <div class="ammo">
+        <small id="weapon-label">AR-7 / ASSAULT RIFLE</small
+        ><b
+          ><span id="ammo">30</span><em> / <span id="reserve">90</span></em></b
+        >
+      </div>
+    </footer>
+    <div id="overlay">
+      <main class="modal">
+        <div class="eyebrow">ORIGINAL SINGLE-PLAYER FPS</div>
+        <h1>TFFERE<br /><span>STRIKE</span></h1>
+        <div class="divider"></div>
+        <h2 id="overlay-title">DEPOT / SECTOR 07</h2>
+        <p id="overlay-copy">
+          Six hostile patrol units. One industrial courtyard.<br />Clear the
+          depot before the clock runs out.
+        </p>
+        <button id="start">DEPLOY INTO DEPOT <span>→</span></button>
+        <div class="loadout">
+          <span>LOADOUT</span><b>1 / AR-7</b><b>2 / AW-9 SNIPER</b>
+        </div>
+        <div class="controls">
+          <div><kbd>W A S D</kbd><span>Move</span></div>
+          <div><kbd>MOUSE</kbd><span>Look / Fire</span></div>
+          <div><kbd>R</kbd><span>Reload</span></div>
+          <div><kbd>SPACE</kbd><span>Jump</span></div>
+          <div><kbd>1 / 2</kbd><span>Rifle / Sniper</span></div>
+          <div><kbd>RIGHT CLICK</kbd><span>Sniper scope</span></div>
+          <div><kbd>SHIFT</kbd><span>Sprint</span></div>
+          <div><kbd>ESC</kbd><span>Pause</span></div>
+        </div>
+        <small class="footnote"
+          >Desktop browser · Headphones recommended · No multiplayer</small
+        >
+      </main>
+      <div class="corner-label">BUILD 0.1 / TRAINING SIMULATION</div>
+    </div>
+    <div id="error" hidden></div>
+    <script type="module" src="game.js"></script>
+  </body>
+</html>

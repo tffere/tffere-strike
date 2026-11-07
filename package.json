@@ -1,0 +1,17 @@
+{
+  "name": "tffere-strike",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "An original single-player tactical FPS prototype",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/core.test.js"
+  },
+  "dependencies": {
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}
