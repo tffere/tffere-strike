@@ -49,3 +49,7 @@ The browser test opens explicit `?test=1` mode, which exposes test state/actions
 This is a small playable prototype, not a full Counter-Strike replacement. It has two selectable weapons, six simple bots, one map, collision, jumping, cover, pause, and rounds. There is no multiplayer, matchmaking, team economy, bomb objective, animation rig, or advanced pathfinding. Bots can occasionally linger behind cover; use the radar and change lanes to find them. Desktop keyboard and mouse are required.
 
 Three.js is installed locally through npm and pinned in the lockfile. After installation, the game makes no external asset requests. Stop the development server with Ctrl+C. This server is intended for local development and is not a hardened public hosting service.
+
+## If Deploy does nothing
+
+Open `http://localhost:4174`, not `index.html` directly. Wait for the button to change from **Loading 3D game** to **Deploy into Depot**. Startup failures now appear in the menu. Run `npm ci` successfully before `npm start`; if a graphics error appears, enable hardware/graphics acceleration in Chrome or Edge and restart the browser. Use F12 → Console to see the specific error.

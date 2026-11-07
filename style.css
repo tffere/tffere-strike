@@ -495,3 +495,5 @@ kbd {
 #damage {
   z-index: 3;
 }
+
+#start:disabled { cursor: wait; opacity: .65; }
