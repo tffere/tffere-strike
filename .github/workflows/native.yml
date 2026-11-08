@@ -28,7 +28,26 @@ jobs:
           R reload, Space jump, Shift sprint, Escape pause, Enter deploy.
           Windows x64 and an OpenGL 3.3 graphics driver are required.
           '@ | Set-Content TffereStrike/READ-ME.txt
+      - name: Scan portable game with Microsoft Defender
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $scanner = Get-ChildItem 'C:/ProgramData/Microsoft/Windows Defender/Platform/*/MpCmdRun.exe' -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $scanner) {
+            $fallback = 'C:/Program Files/Windows Defender/MpCmdRun.exe'
+            if (Test-Path $fallback) { $scanner = Get-Item $fallback }
+          }
+          if (-not $scanner) { throw 'Microsoft Defender scanner is unavailable; no scan result can be claimed.' }
+          $status = Get-MpComputerStatus
+          $status | Select-Object AMProductVersion, AntivirusSignatureVersion, AntivirusSignatureLastUpdated | Format-List | Out-String | Set-Content defender-scan.txt
+          & $scanner.FullName -Scan -ScanType 3 -File "$PWD/TffereStrike" -DisableRemediation 2>&1 | Tee-Object -FilePath defender-scan.txt -Append
+          $scanExit = $LASTEXITCODE
+          "Scanner exit code: $scanExit" | Add-Content defender-scan.txt
+          if ($scanExit -ne 0) { throw "Defender scan failed or detected a threat (exit $scanExit)." }
+          Get-FileHash TffereStrike/TffereStrike.exe -Algorithm SHA256 | Format-List | Out-String | Add-Content defender-scan.txt
       - uses: actions/upload-artifact@v4
         with:
           name: TffereStrike-Windows-x64
-          path: TffereStrike/
+          path: |
+            TffereStrike/
+            defender-scan.txt

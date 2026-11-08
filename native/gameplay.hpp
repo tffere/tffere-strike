@@ -172,7 +172,7 @@ inline Vec2 navigationWaypoint(Vec2 from, Vec2 goal,
     int source = -1, destination = -1;
     float sourceDistance = std::numeric_limits<float>::infinity();
     float destinationDistance = sourceDistance;
-    const auto point = [](int cell) {
+    const auto point = [=](int cell) {
         return Vec2{static_cast<float>(cell % side - extent),
                     static_cast<float>(cell / side - extent)};
     };
