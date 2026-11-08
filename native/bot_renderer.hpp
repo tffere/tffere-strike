@@ -56,6 +56,9 @@ struct BotRenderer {
                 auto forward=strike::viewDirection(b.yaw,0);
                 float dx=game.lastShot.origin.x-b.pos.x,dz=game.lastShot.origin.z-b.pos.z;
                 p.deathDirection=forward.x*dx+forward.z*dz>=0?1.f:-1.f;
+                auto blockedFall=[&](float direction){return strike::circleBlocked(
+                    {b.pos.x-forward.x*direction,b.pos.z-forward.z*direction},.3f,game.obstacles);};
+                if(blockedFall(p.deathDirection)&&!blockedFall(-p.deathDirection))p.deathDirection=-p.deathDirection;
                 p.deathHip=.94f-.55f*b.crouch;
             }
             float travelled=strike::distance(p.previous,b.pos);float speed=dt>0?travelled/dt:0;

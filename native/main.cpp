@@ -346,7 +346,9 @@ int main(int argc,char** argv){
             if(game.mode!=Mode::Playing&&IsKeyPressed(KEY_ESCAPE)){if(game.mode==Mode::Paused)input.start=true;else break;}
             if(capture)input={};
             if(smoke){input={};if(frames<35)input.forward=true;if(frames==40)input.selectAW9=true;if(frames==48)input.toggleScope=true;if(frames==80)input.fire=true;}
+            const auto oldPlayerPos=game.player.pos;
             Mode oldMode=game.mode;game.step(dt,input);botArt.update(game,dt);
+            const float playerTravel=strike::distance(oldPlayerPos,game.player.pos);
             if(game.impactSerial<seenImpact){visibleImpacts.clear();seenImpact=0;}
             if(game.impactSerial>seenImpact && !game.impacts.empty()) {
                 auto mark=game.impacts.back();
@@ -371,8 +373,8 @@ int main(int argc,char** argv){
             if(game.mode!=Mode::Playing&&oldMode==Mode::Playing)EnableCursor();
             if(game.selectedWeapon!=previous){switchAnim=1;previous=game.selectedWeapon;}
             if(game.mode==Mode::Playing){
-                bool moving=input.forward||input.backward||input.left||input.right;
-                walk+=dt*(moving?(input.sprint?12:8):1.2f);
+                bool moving=playerTravel>.0001f;
+                walk+=moving?playerTravel*2.1f:dt*1.2f;
 
                 scope+=(float(game.scoped)-scope)*std::min(1.f,dt*14);
                 recoil=std::max(0.f,recoil-dt*10);switchAnim=std::max(0.f,switchAnim-dt*4);
@@ -404,7 +406,7 @@ int main(int argc,char** argv){
             hitFade=std::max(0.f,hitFade-dt*5);
             for(auto& t:tracers)t.life-=dt;
             tracers.erase(std::remove_if(tracers.begin(),tracers.end(),[](auto t){return t.life<=0;}),tracers.end());
-            float bob=game.mode==Mode::Playing&&(input.forward||input.backward||input.left||input.right)?std::sin(walk)*.025f*(1-scope):0;
+            float bob=game.mode==Mode::Playing&&playerTravel>.0001f&&game.player.y<=game.player.eyeHeight()+.001f?std::sin(walk)*.025f*(1-scope)*(1-.7f*game.player.crouch):0;
             Vector3 eye{game.player.pos.x,game.player.y+bob,game.player.pos.z};
             Vector3 direction=V(strike::viewDirection(game.player.yaw,game.player.pitch));
             Camera3D camera{eye,Vector3Add(eye,direction),{0,1,0},68-scope*48,CAMERA_PERSPECTIVE};
