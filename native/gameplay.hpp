@@ -105,6 +105,9 @@ struct Player {
     float y = EYE_HEIGHT, yaw = 0, pitch = 0, verticalVelocity = 0;
     int health = 100;
 };
+enum class Awareness { Patrol, Investigate, Chase, Search };
+struct Noise { Vec2 position; float radius; };
+struct Impact { Vec3 point, normal; };
 struct Bot {
     Vec2 pos{}, spawn{};
     int hp = 100;
@@ -112,6 +115,10 @@ struct Bot {
     float yaw = 0;
     float feet = 0, verticalVelocity = 0, crouch = 0, speed = 0;
     float actionCooldown = 2, crouchRemaining = 0;
+    Awareness awareness = Awareness::Patrol;
+    Vec2 interest{}, searchCenter{};
+    float memory = 0, searchRemaining = 0, patrolRemaining = 0;
+    unsigned patrolStep = 0, searchStep = 0;
     Vec2 navigationTarget{};
     float navigationCooldown = 0;
     bool alive() const { return hp > 0; }
@@ -300,6 +307,36 @@ public:
     int kills = 0;
     ShotResult lastShot{};
     std::vector<Event> events;
+    std::vector<Impact> impacts;
+    std::vector<Noise> noises; // Discrete stimuli consumed once by all bots.
+    float footstepDistance = 0;
+
+    void makeNoise(Vec2 position, float radius) { noises.push_back({position, radius}); }
+    void leaveImpact(Vec3 origin, Vec3 direction, float hitDistance) {
+        if (!std::isfinite(hitDistance) || hitDistance > 120) return;
+        const Vec3 point{origin.x + direction.x * hitDistance,
+                         origin.y + direction.y * hitDistance,
+                         origin.z + direction.z * hitDistance};
+        Vec3 normal{};
+        float nearest = std::numeric_limits<float>::infinity();
+        for (const auto& box : obstacles) {
+            if (std::abs(rayBox(origin, direction,
+                {box.x-box.w/2,0,box.z-box.d/2},
+                {box.x+box.w/2,box.h,box.z+box.d/2}) - hitDistance) > .002f) continue;
+            const std::array<std::pair<float,Vec3>,6> faces{{
+                {std::abs(point.x-(box.x-box.w/2)),{-1,0,0}},
+                {std::abs(point.x-(box.x+box.w/2)),{1,0,0}},
+                {std::abs(point.z-(box.z-box.d/2)),{0,0,-1}},
+                {std::abs(point.z-(box.z+box.d/2)),{0,0,1}},
+                {std::abs(point.y),{0,-1,0}}, {std::abs(point.y-box.h),{0,1,0}}}};
+            for (const auto& face : faces) if(face.first < nearest) {
+                nearest=face.first; normal=face.second;
+            }
+        }
+        if(nearest > .01f) return;
+        if(impacts.size() >= 256) impacts.erase(impacts.begin());
+        impacts.push_back({point,normal});
+    }
 
     bool desertMap = false;
     explicit Game(bool desert=false):desertMap(desert) {
@@ -354,6 +391,7 @@ public:
             }
             return false;
         }
+        makeNoise(player.pos, selectedWeapon == WeaponId::AW9 ? 48.f : 38.f);
         muzzleFlash = selectedWeapon == WeaponId::AW9 ? .09f : .055f;
         events.push_back({EventType::PlayerShot, -1, selectedWeapon, player.pos});
         const Vec3 origin{player.pos.x, player.y, player.pos.z};
@@ -384,7 +422,7 @@ public:
         lastShot = {true, target >= 0, false, head, target, 0, origin,
                     {origin.x + direction.x * closest, origin.y + direction.y * closest,
                      origin.z + direction.z * closest}};
-        if (target < 0) return true;
+        if (target < 0) { leaveImpact(origin, direction, closest); return true; }
         auto& bot = bots[static_cast<std::size_t>(target)];
         const int damage = head ? weapon().spec.headDamage : weapon().spec.bodyDamage;
         bot.hp = std::max(0, bot.hp - damage);
@@ -433,17 +471,30 @@ public:
             side /= norm;
         }
         const float speed = (input.sprint ? 6.f : 4.f) * dt;
+        const Vec2 previousPlayer = player.pos;
+        const bool grounded = player.y <= EYE_HEIGHT + .001f;
         moveActor(player.pos,
             (-std::sin(player.yaw) * forward + std::cos(player.yaw) * side) * speed,
             (-std::cos(player.yaw) * forward - std::sin(player.yaw) * side) * speed,
             obstacles, PLAYER_RADIUS, std::max(0.f, player.y - EYE_HEIGHT));
+        if (grounded) {
+            footstepDistance += distance(previousPlayer, player.pos);
+            const float stride = input.sprint ? 1.6f : 1.35f;
+            if (footstepDistance >= stride) {
+                makeNoise(player.pos, input.sprint ? 15.f : 8.f);
+                footstepDistance = std::fmod(footstepDistance, stride);
+            }
+        }
         if (input.jump && player.y <= EYE_HEIGHT + .001f) {
             player.verticalVelocity = 6;
             events.push_back({EventType::Jumped});
         }
         player.verticalVelocity -= 16 * dt;
         player.y = std::max(EYE_HEIGHT, player.y + player.verticalVelocity * dt);
-        if (player.y <= EYE_HEIGHT) player.verticalVelocity = 0;
+        if (player.y <= EYE_HEIGHT) {
+            if (!grounded) makeNoise(player.pos, 12.f);
+            player.verticalVelocity = 0;
+        }
         if (input.fire) shoot();
         if (mode != Mode::Playing) return;
         updateBots(dt);
@@ -462,13 +513,15 @@ private:
         scoped = false;
         lastShot = ShotResult{};
         events.clear();
+        impacts.clear(); noises.clear(); footstepDistance=0;
         random_.seed(711);
         for (std::size_t i = 0; i < weapons.size(); ++i) weapons[i].reset(WEAPON_SPECS[i]);
         constexpr std::array<Vec2, 6> starts{{{0, 1}, {-3, -6}, {8, 10}, {4, -15}, {-16, 16}, {17, -4}}};
         for (std::size_t i = 0; i < bots.size(); ++i) {
             bots[i] = Bot{};
             bots[i].pos = bots[i].spawn = desertMap?DESERT_BOT_SPAWNS[i]:starts[i];
-            bots[i].yaw = std::atan2(player.pos.x - bots[i].pos.x, player.pos.z - bots[i].pos.z) + PI;
+            bots[i].yaw = static_cast<float>(i) * 2.39996f;
+            bots[i].interest = bots[i].spawn;
             bots[i].actionCooldown = 1.5f + static_cast<float>(i) * .55f;
             bots[i].phase = static_cast<float>(i);
             bots[i].cooldown = 1 + static_cast<float>(i) * .35f;
@@ -479,22 +532,73 @@ private:
         scoped = false;
         events.push_back({won ? EventType::Won : EventType::Lost});
     }
+    Vec2 explorePoint(Vec2 center, float radius, unsigned step) const {
+        // World-only deterministic samples: never use the hidden player position.
+        for (unsigned n=0; n<24; ++n) {
+            const float angle=(step+n)*2.39996f;
+            const float r=radius*(.45f+.55f*static_cast<float>((step+n)%7)/6.f);
+            Vec2 p{std::clamp(center.x+std::cos(angle)*r,-30.f,30.f),
+                   std::clamp(center.z+std::sin(angle)*r,-30.f,30.f)};
+            if(!circleBlocked(p,.4f,obstacles) && distance(center,p)>.5f
+               && distance(navigationWaypoint(center,p,obstacles),center)>.1f) return p;
+        }
+        return center;
+    }
     void updateBots(float dt) {
         for (std::size_t i = 0; i < bots.size(); ++i) {
             auto& bot = bots[i];
             bot.shotFlash = std::max(0.f, bot.shotFlash - dt);
             if (!bot.alive()) continue;
-            const float dx = player.pos.x - bot.pos.x, dz = player.pos.z - bot.pos.z;
-            const float range = std::hypot(dx, dz);
+            // Live player coordinates are used only by the sight sensor and
+            // the final, visibility-gated shot. Navigation uses remembered evidence.
             const Vec3 target{player.pos.x, player.y, player.pos.z};
-            const bool clear = lineOfSight(botEye(bot), target, obstacles);
+            const bool visible = botSees(bot,target,obstacles);
+            bot.memory = std::max(0.f,bot.memory-dt);
+            bot.searchRemaining = std::max(0.f,bot.searchRemaining-dt);
+            bot.patrolRemaining = std::max(0.f,bot.patrolRemaining-dt);
+            if (visible) {
+                bot.awareness=Awareness::Chase;
+                bot.interest=bot.searchCenter=player.pos;
+                bot.memory=6.f; bot.searchRemaining=0;
+            } else {
+                bool heard=false;
+                for(const auto& noise:noises) {
+                    const bool muffled=!lineOfSight(botEye(bot),
+                        {noise.position.x,1.f,noise.position.z},obstacles);
+                    if(distance(bot.pos,noise.position)>noise.radius*(muffled?.45f:1.f)) continue;
+                    // Coarse sound localization, not an exact player locator.
+                    bot.interest=bot.searchCenter={std::round(noise.position.x/3)*3,
+                                                  std::round(noise.position.z/3)*3};
+                    bot.memory=6.f;bot.awareness=Awareness::Investigate;
+                    bot.searchRemaining=0;heard=true;
+                }
+                if(!heard && (bot.awareness==Awareness::Chase || bot.awareness==Awareness::Investigate)
+                   && (bot.memory<=0 || distance(bot.pos,bot.interest)<1.f)) {
+                    bot.awareness=Awareness::Search;bot.searchRemaining=8.f;
+                    bot.interest=explorePoint(bot.searchCenter,5.f,++bot.searchStep);
+                    bot.navigationCooldown=0;
+                }
+                if(bot.awareness==Awareness::Search) {
+                    if(bot.searchRemaining<=0) {bot.awareness=Awareness::Patrol;bot.patrolRemaining=0;}
+                    else if(distance(bot.pos,bot.interest)<.8f) {
+                        bot.interest=explorePoint(bot.searchCenter,5.f,++bot.searchStep);
+                        bot.navigationCooldown=0;
+                    }
+                }
+                if(bot.awareness==Awareness::Patrol &&
+                   (bot.patrolRemaining<=0 || distance(bot.pos,bot.interest)<1.f)) {
+                    bot.interest=explorePoint(bot.spawn,26.f,++bot.patrolStep+static_cast<unsigned>(i)*7);
+                    bot.patrolRemaining=12.f;bot.navigationCooldown=0;
+                }
+            }
+            const float range=distance(bot.pos,bot.interest);
             bot.actionCooldown -= dt;
             bot.crouchRemaining = std::max(0.f, bot.crouchRemaining - dt);
             if (bot.actionCooldown <= 0 && bot.feet <= 0) {
                 // Stagger actions so patrols do not jump/crouch in unison.
-                if (clear && range < 16 && (i + static_cast<int>(elapsed / 3)) % 2 == 0)
+                if (visible && range < 16 && (i + static_cast<int>(elapsed / 3)) % 2 == 0)
                     bot.crouchRemaining = 1.3f;
-                else if (range > 7) bot.verticalVelocity = 5.2f;
+                else if (bot.awareness!=Awareness::Patrol && range > 7) bot.verticalVelocity = 5.2f;
                 bot.actionCooldown = 3.5f + static_cast<float>(i) * .27f;
             }
             const float stance = bot.crouchRemaining > 0 && bot.feet <= 0 ? 1.f : 0.f;
@@ -505,10 +609,12 @@ private:
             bot.feet = std::max(0.f, bot.feet + bot.verticalVelocity * dt);
             if (bot.feet <= 0) bot.verticalVelocity = 0;
             bot.navigationCooldown -= dt;
-            Vec2 goal = player.pos;
-            if (!clear) {
+            Vec2 goal = bot.interest;
+            const bool routeClear=lineOfSight({bot.pos.x,.35f,bot.pos.z},
+                                              {goal.x,.35f,goal.z},obstacles);
+            if (!routeClear) {
                 if (bot.navigationCooldown <= 0 || distance(bot.pos, bot.navigationTarget) < .2f) {
-                    bot.navigationTarget = navigationWaypoint(bot.pos, player.pos, obstacles);
+                    bot.navigationTarget = navigationWaypoint(bot.pos, bot.interest, obstacles);
                     bot.navigationCooldown = .8f + static_cast<float>(i) * .04f;
                 }
                 goal = bot.navigationTarget;
@@ -518,9 +624,9 @@ private:
             bot.yaw = std::remainder(bot.yaw + std::clamp(std::remainder(desiredYaw - bot.yaw, 2 * PI),
                                                          -dt * 3.5f, dt * 3.5f), 2 * PI);
             const Vec2 before = bot.pos;
-            if (range > 6 || !clear) {
+            if (range > (visible ? 6.f : .5f)) {
                 const float length = std::hypot(gx, gz);
-                const float pace = (range > 12 ? 3.8f : 2.1f) * (1.f - .60f * bot.crouch);
+                const float pace = (bot.awareness!=Awareness::Patrol && range > 12 ? 3.8f : 2.1f) * (1.f - .60f * bot.crouch);
                 const float amount = std::min(length, pace * dt);
                 if (length > .001f) moveActor(bot.pos, gx / length * amount, gz / length * amount, obstacles, .36f);
             }
@@ -548,10 +654,12 @@ private:
                 events.push_back({EventType::PlayerHit, static_cast<int>(i), WeaponId::AR7, player.pos, 9});
                 if (player.health <= 0) {
                     finish(false);
+                    noises.clear();
                     return;
                 }
             }
         }
+        noises.clear();
     }
 };
 

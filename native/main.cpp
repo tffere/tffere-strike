@@ -295,7 +295,7 @@ int main(int argc,char** argv){
     for(int i=1;i<argc;i++){if(!std::strcmp(argv[i],"--smoke-test"))smoke=true;if(!std::strcmp(argv[i],"--capture"))capture=true;if(!std::strcmp(argv[i],"--capture-nw")){capture=true;sectorCapture=4;}if(!std::strcmp(argv[i],"--capture-ne")){capture=true;sectorCapture=5;}if(!std::strcmp(argv[i],"--capture-sw")){capture=true;sectorCapture=6;}if(!std::strcmp(argv[i],"--capture-se")){capture=true;sectorCapture=7;}if(!std::strcmp(argv[i],"--capture-long")){capture=true;sectorCapture=1;}if(!std::strcmp(argv[i],"--capture-west")){capture=true;sectorCapture=2;}if(!std::strcmp(argv[i],"--capture-court")){capture=true;sectorCapture=3;}if(!std::strcmp(argv[i],"--bot-capture")){botCapture=true;capture=true;}if(!std::strcmp(argv[i],"--map-capture")){mapCapture=true;capture=true;}}
     std::filesystem::path base=std::filesystem::absolute(argv[0]).parent_path();
     SetTraceLogLevel(LOG_WARNING);SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT|FLAG_VSYNC_HINT);
-    InitWindow(1280,720,"Tffere Strike v1.2 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
+    InitWindow(1280,720,"Tffere Strike v1.3 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
     int exitCode=0;
     try{
         std::filesystem::path assets=base/"assets";
@@ -382,6 +382,23 @@ int main(int argc,char** argv){
             BeginMode3D(camera);gfx.uniforms(camera.position,eye,game.muzzleFlash>0?1.2f:0);
             float fogDensity=mapCapture?.001f:.006f;SetShaderValue(gfx.lit,gfx.locFog,&fogDensity,SHADER_UNIFORM_FLOAT);
             gfx.world();for(int i=0;i<6;i++)botArt.draw(gfx,game.bots[i],i,game.elapsed);
+            for(const auto& mark:game.impacts) {
+                Vector3 n=V(mark.normal),center=Vector3Add(V(mark.point),Vector3Scale(n,.008f));
+                Vector3 reference=std::abs(n.y)>.9f?Vector3{1,0,0}:Vector3{0,1,0};
+                Vector3 u=Vector3Normalize(Vector3CrossProduct(reference,n));
+                Vector3 v=Vector3CrossProduct(n,u);
+                // Dark chipped rim and inner crater, aligned with the hit face.
+                for(int layer=0;layer<2;layer++) {
+                    float radius=layer==0?.075f:.036f;
+                    Color color=layer==0?Color{99,85,66,255}:Color{24,25,23,255};
+                    Vector3 c=Vector3Add(center,Vector3Scale(n,layer*.002f));
+                    for(int k=0;k<10;k++) {
+                        float a=k*2*PI/10,b=(k+1)*2*PI/10;
+                        auto edge=[&](float angle){return Vector3Add(c,Vector3Add(Vector3Scale(u,std::cos(angle)*radius),Vector3Scale(v,std::sin(angle)*radius)));};
+                        DrawTriangle3D(c,edge(a),edge(b),color);
+                    }
+                }
+            }
             for(auto t:tracers)DrawLine3D(t.start,t.end,{255,218,137,160});
             EndMode3D();
             // A dedicated view camera keeps the hands and weapons properly framed.

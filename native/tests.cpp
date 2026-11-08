@@ -33,6 +33,76 @@ int main() {
     using namespace strike;
     using Test = std::pair<const char*, std::function<void()>>;
     const std::vector<Test> tests{
+        {"silent hidden player positions cannot influence patrols", [] {
+            Game a,b; a.start();b.start();quiet(a);quiet(b);
+            a.obstacles=b.obstacles={{0,5,66,1,12}};
+            for(Game* g:{&a,&b}) {
+                auto& bot=g->bots[0];bot=Bot{};bot.pos=bot.spawn={0,0};bot.cooldown=100;
+            }
+            a.player.pos={-20,20};b.player.pos={20,20};
+            for(int i=0;i<200;i++) {a.step(.02f);b.step(.02f);}
+            const auto& x=a.bots[0];const auto& y=b.bots[0];
+            check(near(x.pos.x,y.pos.x)&&near(x.pos.z,y.pos.z)&&near(x.yaw,y.yaw),"hidden location changed patrol");
+            check(x.awareness==Awareness::Patrol && x.patrolStep>0,"idle bot did not explore");
+            check(distance(x.pos,x.spawn)>.5f,"patrol never moved");
+        }},
+        {"last sight stays fixed until search and patrol replace stale memory", [] {
+            Game g;g.start();g.obstacles.clear();quiet(g);
+            auto& b=g.bots[0];b=Bot{};b.pos={0,0};b.hp=100;b.cooldown=100;
+            g.player.pos={0,-8};g.step(.02f);
+            check(b.awareness==Awareness::Chase,"visible target not acquired");
+            Vec2 remembered=b.interest;
+            g.obstacles={{0,-4,66,1,10}};g.player.pos={18,-12};
+            g.step(.02f);
+            check(near(b.interest.x,remembered.x)&&near(b.interest.z,remembered.z),"bot tracked hidden player");
+            b.memory=.01f;g.step(.02f);
+            check(b.awareness==Awareness::Search,"expired memory did not start search");
+            check(near(b.searchCenter.x,remembered.x),"search center followed hidden target");
+            b.searchRemaining=.01f;g.step(.02f);
+            check(b.awareness==Awareness::Patrol,"search never returned to patrol");
+        }},
+        {"gunshots are localized once and walls attenuate hearing", [] {
+            Game g;g.start();quiet(g);g.obstacles={{0,5,66,1,10}};
+            auto& b=g.bots[0];b=Bot{};b.cooldown=100;g.player.pos={1,10};
+            g.shoot();g.step(.02f);
+            check(b.awareness==Awareness::Investigate,"nearby hidden gunshot ignored");
+            check(near(b.interest.x,0)&&near(b.interest.z,9),"sound should have coarse location");
+            Vec2 heard=b.interest;g.player.pos={-20,20};g.step(.02f);
+            check(near(b.interest.x,heard.x)&&near(b.interest.z,heard.z),"consumed noise followed player");
+            g.restart();quiet(g);b=Bot{};b.cooldown=100;
+            g.player.pos={0,24};g.shoot();g.step(.02f);
+            check(b.awareness==Awareness::Patrol,"wall did not attenuate distant gunshot");
+        }},
+        {"footsteps require actual grounded travel and do not reveal silent players", [] {
+            Game g;g.start();quiet(g);g.obstacles.clear();
+            auto& b=g.bots[0];b=Bot{};b.interest={0,-20};b.patrolRemaining=100;b.cooldown=100;
+            g.player.pos={0,5};g.player.yaw=PI;
+            g.step(.25f);
+            check(b.awareness==Awareness::Patrol,"standing player made footsteps");
+            Input in;in.forward=true;g.step(.25f,in);g.step(.1f,in);
+            check(b.awareness==Awareness::Investigate,"nearby actual footsteps ignored");
+            g.restart();quiet(g);b=Bot{};b.interest={0,-20};b.patrolRemaining=100;b.cooldown=100;
+            g.player.pos={0,5};g.player.yaw=PI;g.obstacles={{0,6,4,1,3}};
+            for(int i=0;i<8;i++)g.step(.1f,in);
+            check(b.awareness==Awareness::Patrol,"walking against wall made footsteps");
+        }},
+        {"bullet marks sit on the nearest hit face and reset each round", [] {
+            Game g;g.start();quiet(g);g.player.pos={0,5};
+            g.obstacles={{0,0,4,2,4},{0,-5,4,2,4}};
+            g.shoot();check(g.impacts.size()==1,"wall shot left no mark");
+            const auto& m=g.impacts.back();
+            check(near(m.point.z,1)&&near(m.normal.z,1)&&near(m.point.y,EYE_HEIGHT),"mark on wrong face");
+            for(int i=0;i<270;i++){g.weapon().ammo=30;g.weapon().cooldown=0;g.shoot();}
+            check(g.impacts.size()==256,"impact limit not enforced");
+            g.restart();check(g.impacts.empty(),"marks survived restart");
+        }},
+        {"body hits and sky misses do not create wall marks", [] {
+            Game g;g.start();quiet(g);g.obstacles.clear();
+            auto& b=g.bots[0];b.hp=100;b.pos={0,5};aim(g,b.pos);g.shoot();
+            check(g.lastShot.hit&&g.impacts.empty(),"body hit left a floating mark");
+            b.hp=0;g.weapon().cooldown=0;g.player.pitch=1.2f;g.shoot();
+            check(g.impacts.empty(),"sky miss left a floating mark");
+        }},
         {"vision rejects targets behind, outside cone, or behind cover", [] {
             Bot bot; bot.pos={0,0}; bot.yaw=0;
             check(botSees(bot,{0,1.7f,-8},{}), "front target unseen");
@@ -58,7 +128,7 @@ int main() {
         }},
         {"bots run, jump, land and crouch on staggered action timers", [] {
             Game game; game.start(); game.obstacles.clear(); quiet(game);
-            auto& b=game.bots[0]; b.hp=100; b.pos={0,-5}; b.cooldown=100;
+            auto& b=game.bots[0]; b.hp=100; b.pos={0,-5}; b.yaw=PI; b.cooldown=100;
             b.actionCooldown=0;
             game.step(.05f);
             check(b.speed>3,"bot did not run");
@@ -240,7 +310,7 @@ int main() {
         }},
         {"bots approach, attack with line of sight and cause defeat", [] {
             Game game; game.start(); game.obstacles.clear(); quiet(game);
-            auto& bot = game.bots[0]; bot.hp = 100; bot.pos = {0, 5}; bot.cooldown = 0;
+            auto& bot = game.bots[0]; bot.hp = 100; bot.pos = {0, 5}; bot.yaw=PI; bot.cooldown = 0;
             const float before = distance(bot.pos, game.player.pos);
             game.step(.1f);
             check(distance(bot.pos, game.player.pos) < before, "bot did not approach");
@@ -271,8 +341,9 @@ int main() {
             game.step(.2f);
             check(game.mode == Mode::Lost && game.timeLeft == 0 && hasEvent(game, EventType::Lost), "round timeout failed");
         }},
-        {"blocked patrol routes around the container into line of sight", [] {
+        {"heard gunshot routes a patrol around cover into line of sight", [] {
             Game game; game.start();
+            game.makeNoise(game.player.pos,48);
             for (int i = 0; i < 1200; ++i) {
                 game.player.health = 100; // isolate navigation from round defeat
                 game.step(.05f);
