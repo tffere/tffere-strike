@@ -34,6 +34,7 @@ constexpr float MAP_LIMIT = 31.5f;
 constexpr float PLAYER_RADIUS = .35f;
 constexpr float EYE_HEIGHT = 1.7f;
 constexpr float ROUND_SECONDS = 180.f;
+constexpr float WALK_SPEED=4.f,SPRINT_SPEED=6.f,CROUCH_DROP=.65f,AI_TURN_RATE=3.5f;
 
 struct Vec2 { float x = 0, z = 0; };
 struct Vec3 { float x = 0, y = 0, z = 0; };
@@ -42,11 +43,11 @@ struct Obstacle { float x, z, w, d, h; ObstacleKind kind = ObstacleKind::Crate; 
 #include "map_layout.hpp"
 
 enum class WeaponId { AR7 = 0, AW9 = 1 };
-enum class Mode { Ready, Playing, Paused, Won, Lost };
+enum class Mode { Ready, Playing, Paused, Won, Lost, Draw };
 enum class EventType {
     Restarted, PauseChanged, PlayerShot, EmptyClick, ReloadStarted,
     ReloadCompleted, WeaponSwitched, ScopeChanged, BotShot,
-    PlayerFootstep, BotFootstep, Landed, PlayerHit, BotHit, BotKilled, Jumped, Won, Lost
+    PlayerFootstep, BotFootstep, Landed, PlayerHit, BotHit, BotKilled, Jumped, Won, Lost, Draw
 };
 struct Event {
     EventType type;
@@ -60,10 +61,11 @@ struct WeaponSpec {
     std::string_view name;
     int capacity, initialReserve, bodyDamage, headDamage;
     float shotInterval, reloadSeconds;
+    float baseSpread=.008f,recoilKick=.018f,recoilSide=.004f;
 };
 inline constexpr std::array<WeaponSpec, 2> WEAPON_SPECS{{
-    {"AR-7", 30, 90, 36, 75, .115f, 1.65f},
-    {"AW-9", 5, 20, 125, 220, 1.35f, 2.5f}
+    {"AR-7", 30, 90, 36, 75, .115f, 1.65f, .008f, .018f, .004f},
+    {"AW-9", 5, 20, 125, 220, 1.35f, 2.5f, .0025f, .060f, .010f}
 }};
 
 struct WeaponState {
@@ -105,8 +107,8 @@ struct Player {
     Vec2 pos{0, 18};
     float y = EYE_HEIGHT, yaw = 0, pitch = 0, verticalVelocity = 0;
     int health = 100;
-    float crouch = 0;
-    float eyeHeight() const { return EYE_HEIGHT - .65f*crouch; }
+    float crouch = 0, speed=0,recoilPitch=0,recoilYaw=0;
+    float eyeHeight() const { return EYE_HEIGHT - CROUCH_DROP*crouch; }
 };
 enum class Awareness { Patrol, Investigate, Chase, Search };
 struct Noise { Vec2 position; float radius; };
@@ -114,8 +116,8 @@ struct Impact { Vec3 point, normal, origin, direction; };
 struct Bot {
     Vec2 pos{}, spawn{};
     int hp = 100;
-    float phase = 0, cooldown = 1, shotFlash = 0;
-    float yaw = 0;
+    float phase = 0, cooldown = 0, shotFlash = 0;
+    float yaw = 0, pitch=0,recoilPitch=0,recoilYaw=0;
     float feet = 0, verticalVelocity = 0, crouch = 0, speed = 0;
     float footstepDistance = 0;
     float actionCooldown = 2, crouchRemaining = 0;
@@ -124,7 +126,8 @@ struct Bot {
     float memory = 0, searchRemaining = 0, patrolRemaining = 0;
     unsigned patrolStep = 0, searchStep = 0;
     int tacticalAction=tactics::Search, forcedAction=-1;
-    float decisionRemaining=0, switchRemaining=0;
+    float decisionRemaining=0, switchRemaining=0,weaponCommitment=0;
+    int decisionState=0;
     WeaponId selected=WeaponId::AR7;
     std::array<WeaponState,2> guns{};
     Bot(){for(int w=0;w<2;w++)guns[w].reset(WEAPON_SPECS[w]);}
@@ -134,7 +137,7 @@ struct Bot {
 };
 struct Input {
     bool forward = false, backward = false, left = false, right = false;
-    bool sprint = false, crouch = false, jump = false, fire = false, reload = false;
+    bool sprint = false, walk=false, crouch = false, jump = false, fire = false, reload = false;
     bool toggleScope = false, selectAR7 = false, selectAW9 = false;
     bool pause = false, restart = false, start = false;
     float lookX = 0, lookY = 0;
@@ -270,12 +273,25 @@ inline Vec3 viewDirection(float yaw, float pitch) {
     const float cp = std::cos(pitch);
     return {-std::sin(yaw) * cp, std::sin(pitch), -std::cos(yaw) * cp};
 }
-inline float botHeadBase(const Bot& bot) { return bot.feet + 1.55f - .55f * bot.crouch; }
-inline Vec3 botEye(const Bot& bot) { return {bot.pos.x, bot.feet + 1.7f - .55f * bot.crouch, bot.pos.z}; }
+inline float accuracyMultiplier(float speed,float crouch,bool airborne){
+    float movement=speed>5.f?3.f:speed>2.1f?1.5f:speed>.05f?.75f:1.f;
+    return movement*(1.f-.5f*crouch)*(airborne?4.f:1.f);
+}
+inline Vec3 fireDirection(float yaw,float pitch,float& recoilYaw,float& recoilPitch,
+                         const WeaponSpec& spec,float speed,float crouch,bool airborne,std::mt19937& rng){
+    auto random=[&](){return float(rng()%10001)/5000.f-1.f;};
+    const float spread=spec.baseSpread*accuracyMultiplier(speed,crouch,airborne);
+    const auto ray=viewDirection(yaw+recoilYaw+random()*spread,pitch+recoilPitch+random()*spread);
+    recoilPitch=std::min(.20f,recoilPitch+spec.recoilKick);
+    recoilYaw=std::clamp(recoilYaw+random()*spec.recoilSide,-.08f,.08f);
+    return ray;
+}
+inline float botHeadBase(const Bot& bot) { return bot.feet + 1.55f - CROUCH_DROP * bot.crouch; }
+inline Vec3 botEye(const Bot& bot) { return {bot.pos.x, bot.feet + 1.7f - CROUCH_DROP * bot.crouch, bot.pos.z}; }
 inline Vec3 botMuzzle(const Bot& bot) {
     const auto forward = viewDirection(bot.yaw, 0);
     const float reach=.87f;
-    return {bot.pos.x + forward.x * reach, bot.feet + 1.32f - .55f * bot.crouch,
+    return {bot.pos.x + forward.x * reach, bot.feet + 1.32f - CROUCH_DROP * bot.crouch,
             bot.pos.z + forward.z * reach};
 }
 inline bool botSees(const Bot& bot, Vec3 target, const std::vector<Obstacle>& obstacles) {
@@ -365,6 +381,15 @@ public:
         return {seen,known,covered,b.hp<=40,gun.ammo<=int(gun.spec.capacity*.2f),
                 range<9?0:range<18?1:2,int(b.selected)};
     }
+    tactics::ActionMask botActionMask(std::size_t index) const {
+        const auto& b=bots.at(index);auto o=botObservation(index);
+        const auto& gun=b.guns[static_cast<std::size_t>(b.selected)];
+        bool cover=o.covered||(o.known&&distance(botCoverGoal(b),b.pos)>.1f);
+        bool clear=true;
+        if(o.visible)clear=lineOfSight(botEye(b),{player.pos.x,player.y,player.pos.z},obstacles);
+        return tactics::legalActions(o,{gun.ammo,b.guns[1-static_cast<std::size_t>(b.selected)].ammo,
+            b.switchRemaining,b.weaponCommitment,gun.reloadRemaining,cover,clear});
+    }
     Vec2 botCoverGoal(const Bot& bot) const {
         Vec2 best=bot.pos;float cost=std::numeric_limits<float>::infinity();
         for(const auto& box:obstacles){
@@ -436,7 +461,8 @@ public:
         muzzleFlash = selectedWeapon == WeaponId::AW9 ? .09f : .055f;
         events.push_back({EventType::PlayerShot, -1, selectedWeapon, player.pos});
         const Vec3 origin{player.pos.x, player.y, player.pos.z};
-        const Vec3 direction = viewDirection(player.yaw, player.pitch);
+        const Vec3 direction = fireDirection(player.yaw,player.pitch,player.recoilYaw,player.recoilPitch,
+            weapon().spec,player.speed,player.crouch,player.y>player.eyeHeight()+.001f,random_);
         float closest = std::min(120.f, obstacleRay(origin, direction, obstacles));
         int target = -1;
         bool head = false;
@@ -466,12 +492,13 @@ public:
         if (target < 0) { leaveImpact(origin, direction, closest); return true; }
         auto& bot = bots[static_cast<std::size_t>(target)];
         const int damage = head ? weapon().spec.headDamage : weapon().spec.bodyDamage;
-        bot.hp = std::max(0, bot.hp - damage);
+        if(combatStep_)queuedBotDamage_[static_cast<std::size_t>(target)]+=damage;
+        else bot.hp = std::max(0, bot.hp - damage);
         lastShot.damage = damage;
         lastShot.killed = !bot.alive();
         hitMarker = .15f;
         events.push_back({EventType::BotHit, target, selectedWeapon, bot.pos, static_cast<float>(damage)});
-        if (!bot.alive()) {
+        if (!combatStep_&&!bot.alive()) {
             ++kills;
             events.push_back({EventType::BotKilled, target, selectedWeapon, bot.pos});
             if (remaining() == 0) finish(true);
@@ -487,6 +514,7 @@ public:
         if (mode != Mode::Playing) return;
         const float dt = std::clamp(seconds, 0.f, .25f);
         elapsed += dt;
+        player.recoilPitch*=std::exp(-dt*8);player.recoilYaw*=std::exp(-dt*8);
         timeLeft = std::max(0.f, timeLeft - dt);
         muzzleFlash = std::max(0.f, muzzleFlash - dt);
         hitMarker = std::max(0.f, hitMarker - dt);
@@ -515,13 +543,14 @@ public:
         const bool grounded=feet<=.001f;
         player.crouch+=std::clamp((input.crouch?1.f:0.f)-player.crouch,-dt*5,dt*5);
         player.y=feet+player.eyeHeight();
-        const bool sprinting=input.sprint && player.crouch<.1f;
-        const float speed = (sprinting ? 6.f : 4.f-2.f*player.crouch) * dt;
+        const bool sprinting=input.sprint && !input.walk && player.crouch<.1f;
+        const float speed = (sprinting ? SPRINT_SPEED : input.walk?2.f:WALK_SPEED-2.f*player.crouch) * dt;
         const Vec2 previousPlayer = player.pos;
         moveActor(player.pos,
             (-std::sin(player.yaw) * forward + std::cos(player.yaw) * side) * speed,
             (-std::cos(player.yaw) * forward - std::sin(player.yaw) * side) * speed,
             obstacles, PLAYER_RADIUS, std::max(0.f, player.y - player.eyeHeight()));
+        player.speed=dt>0?distance(previousPlayer,player.pos)/dt:0;
         if (grounded) {
             footstepDistance += distance(previousPlayer, player.pos);
             const float stride = sprinting ? 1.6f : 1.35f-.4f*player.crouch;
@@ -545,13 +574,26 @@ public:
             }
             player.verticalVelocity = 0;
         }
+        queuedBotDamage_.fill(0);queuedPlayerDamage_=0;combatStep_=true;
         if (input.fire) shoot();
-        if (mode != Mode::Playing) return;
-        updateBots(dt);
+        updateBots(dt);combatStep_=false;
+        for(std::size_t i=0;i<bots.size();i++)if(queuedBotDamage_[i]>0&&bots[i].alive()){
+            bots[i].hp=std::max(0,bots[i].hp-queuedBotDamage_[i]);
+            if(!bots[i].alive()){
+                ++kills;events.push_back({EventType::BotKilled,static_cast<int>(i),selectedWeapon,bots[i].pos});
+                if(lastShot.bot==static_cast<int>(i))lastShot.killed=true;
+            }
+        }
+        player.health=std::max(0,player.health-queuedPlayerDamage_);
+        if(player.health<=0&&remaining()==0){mode=Mode::Draw;scoped=false;events.push_back({EventType::Draw});}
+        else if(player.health<=0)finish(false);
+        else if(remaining()==0)finish(true);
         if (mode == Mode::Playing && timeLeft <= 0) finish(false);
     }
 
 private:
+    bool combatStep_=false;
+    std::array<int,6> queuedBotDamage_{};int queuedPlayerDamage_=0;
     std::mt19937 random_{711};
     void resetState() {
         player = Player{};
@@ -575,7 +617,7 @@ private:
             bots[i].actionCooldown = 1.5f + static_cast<float>(i) * .55f;
             for(int w=0;w<2;w++)bots[i].guns[w].reset(WEAPON_SPECS[w]);
             bots[i].phase = static_cast<float>(i);
-            bots[i].cooldown = 1 + static_cast<float>(i) * .35f;
+            bots[i].cooldown = 0;
         }
     }
     void finish(bool won) {
@@ -599,6 +641,7 @@ private:
         for (std::size_t i = 0; i < bots.size(); ++i) {
             auto& bot = bots[i];
             bot.shotFlash = std::max(0.f, bot.shotFlash - dt);
+            bot.recoilPitch*=std::exp(-dt*8);bot.recoilYaw*=std::exp(-dt*8);
             if (!bot.alive()) continue;
             // Live player coordinates are used only by the sight sensor and
             // the final, visibility-gated shot. Navigation uses remembered evidence.
@@ -645,22 +688,28 @@ private:
             const float range=distance(bot.pos,bot.interest);
             bot.actionCooldown -= dt;
             bot.crouchRemaining = std::max(0.f, bot.crouchRemaining - dt);
-            if (bot.actionCooldown <= 0 && bot.feet <= 0) {
+            if (!trainedBots && bot.actionCooldown <= 0 && bot.feet <= 0) {
                 // Stagger actions so patrols do not jump/crouch in unison.
                 if (visible && range < 16 && (i + static_cast<int>(elapsed / 3)) % 2 == 0)
                     bot.crouchRemaining = 1.3f;
-                else if (bot.awareness!=Awareness::Patrol && range > 7) bot.verticalVelocity = 5.2f;
+                else if (bot.awareness!=Awareness::Patrol && range > 7) bot.verticalVelocity = 6.f;
                 bot.actionCooldown = 3.5f + static_cast<float>(i) * .27f;
             }
+            if(trainedBots)bot.crouchRemaining=bot.tacticalAction==tactics::Hide&&distance(bot.pos,botCoverGoal(bot))<1?.1f:0;
             const float stance = bot.crouchRemaining > 0 && bot.feet <= 0 ? 1.f : 0.f;
-            bot.crouch += std::clamp(stance - bot.crouch, -dt * 4, dt * 4);
+            bot.crouch += std::clamp(stance - bot.crouch, -dt * 5, dt * 5);
             // Jump is a real vertical arc. Horizontal collision stays conservative:
             // bots jump on navigable ground rather than clipping through cover.
+            const bool wasAirborne=bot.feet>0;
             bot.verticalVelocity -= 16 * dt;
             bot.feet = std::max(0.f, bot.feet + bot.verticalVelocity * dt);
-            if (bot.feet <= 0) bot.verticalVelocity = 0;
+            if (bot.feet <= 0){
+                if(wasAirborne)events.push_back({EventType::BotFootstep,static_cast<int>(i),bot.selected,bot.pos,1.35f});
+                bot.verticalVelocity = 0;
+            }
             bot.navigationCooldown -= dt;
             bot.switchRemaining=std::max(0.f,bot.switchRemaining-dt);
+            bot.weaponCommitment=std::max(0.f,bot.weaponCommitment-dt);
             for(auto& gun:bot.guns)gun.update(dt);
             Vec2 goal = bot.interest;
             bool advance=true,wantsFire=true;
@@ -668,8 +717,11 @@ private:
                 const auto observation=botObservation(i);
                 bot.decisionRemaining-=dt;
                 if(bot.decisionRemaining<=.0001f){
-                    bot.tacticalAction=bot.forcedAction>=0?bot.forcedAction:
-                        observation.known?botPolicy.greedy(observation):tactics::Search;
+                    const auto allowed=botActionMask(i);const int oldAction=bot.tacticalAction;
+                    bot.tacticalAction=bot.forcedAction>=0&&bot.forcedAction<tactics::ACTIONS&&allowed[bot.forcedAction]?
+                        bot.forcedAction:botPolicy.greedyMasked(observation,allowed);
+                    bot.decisionState=observation.index();
+                    if(oldAction!=bot.tacticalAction)bot.navigationCooldown=0;
                     bot.decisionRemaining=.25f;
                 }
                 const int action=bot.tacticalAction;
@@ -678,7 +730,7 @@ private:
                         action==tactics::Right||action==tactics::Search;
                 if(action==tactics::Rifle||action==tactics::Sniper){
                     const auto weapon=action==tactics::Sniper?WeaponId::AW9:WeaponId::AR7;
-                    if(weapon!=bot.selected){bot.selected=weapon;bot.switchRemaining=.35f;}
+                    if(weapon!=bot.selected){bot.selected=weapon;bot.switchRemaining=.35f;bot.weaponCommitment=2.f;}
                 }
                 if(action==tactics::Reload)bot.guns[static_cast<std::size_t>(bot.selected)].reload();
                 if(observation.known){
@@ -694,73 +746,73 @@ private:
                 if(observation.known&&!observation.visible&&wantsFire){
                     advance=true;wantsFire=false;goal=bot.searchCenter;
                 }
+                // Return fire while moving/retreating when actually visible;
+                // shooting is still gated by aim, muzzle clearance and readiness.
+                if(observation.visible&&action!=tactics::Reload)wantsFire=true;
                 if(!observation.known){advance=true;wantsFire=false;}
             }
             const bool routeClear=lineOfSight({bot.pos.x,.35f,bot.pos.z},
                                               {goal.x,.35f,goal.z},obstacles);
             if (!routeClear) {
                 if (bot.navigationCooldown <= 0 || distance(bot.pos, bot.navigationTarget) < .2f) {
-                    bot.navigationTarget = navigationWaypoint(bot.pos, bot.interest, obstacles);
+                    bot.navigationTarget = navigationWaypoint(bot.pos, goal, obstacles);
                     bot.navigationCooldown = .8f + static_cast<float>(i) * .04f;
                 }
                 goal = bot.navigationTarget;
             } else bot.navigationCooldown = 0;
             const float gx = goal.x - bot.pos.x, gz = goal.z - bot.pos.z;
             const Vec2 aim=trainedBots&&bot.memory>0?bot.searchCenter:goal;
-            const float desiredYaw = std::atan2(bot.pos.x-aim.x,bot.pos.z-aim.z);
+            const float desiredYaw = std::atan2(bot.pos.x-aim.x,bot.pos.z-aim.z)-bot.recoilYaw;
             bot.yaw = std::remainder(bot.yaw + std::clamp(std::remainder(desiredYaw - bot.yaw, 2 * PI),
-                                                         -dt * 3.5f, dt * 3.5f), 2 * PI);
+                                                         -dt * AI_TURN_RATE, dt * AI_TURN_RATE), 2 * PI);
             const Vec2 before = bot.pos;
             if (advance && distance(bot.pos,goal) > (trainedBots?.5f:(visible?6.f:.5f))) {
                 const float length = std::hypot(gx, gz);
-                const float pace = (bot.awareness!=Awareness::Patrol && range > 12 ? 3.8f : 2.1f) * (1.f - .60f * bot.crouch);
+                const float pace = (bot.memory>0 && distance(bot.pos,bot.searchCenter)>12 && bot.crouch<.1f ? SPRINT_SPEED : trainedBots&&visible?2.f:WALK_SPEED) * (1.f - .5f * bot.crouch);
                 const float amount = std::min(length, pace * dt);
-                if (length > .001f) moveActor(bot.pos, gx / length * amount, gz / length * amount, obstacles, .36f);
+                if (length > .001f) moveActor(bot.pos, gx / length * amount, gz / length * amount, obstacles, PLAYER_RADIUS);
             }
             bot.speed = dt > 0 ? distance(before, bot.pos) / dt : 0;
             bot.phase += distance(before, bot.pos) * 7;
             if(bot.feet<=.001f) {
                 bot.footstepDistance+=distance(before,bot.pos);
-                const float stride=bot.speed>2.8f?1.45f:1.05f;
+                const bool sprinting=bot.speed>5.f;
+                const float stride=sprinting?1.6f:1.35f-.4f*bot.crouch;
                 if(bot.footstepDistance>=stride) {
                     events.push_back({EventType::BotFootstep,static_cast<int>(i),WeaponId::AR7,bot.pos,
-                                      (bot.speed>2.8f?1.1f:.7f)*(1-.7f*bot.crouch)});
+                                      (sprinting?1.25f:1.f-.75f*bot.crouch)});
                     bot.footstepDistance=std::fmod(bot.footstepDistance,stride);
                 }
             }
             bot.cooldown -= dt;
             // Check the final position and posture, both eyes and muzzle. The
             // muzzle must also be reachable from the body (no barrel through walls).
-            const Vec3 muzzle = botMuzzle(bot);
-            const Vec3 chest{bot.pos.x, muzzle.y, bot.pos.z};
-            const auto facing = viewDirection(bot.yaw, 0);
-            const float finalDx = target.x - bot.pos.x, finalDz = target.z - bot.pos.z;
-            const float finalRange = std::hypot(finalDx, finalDz);
-            const bool aimed = finalRange < .001f ||
-                (facing.x * finalDx + facing.z * finalDz) / finalRange > .985f;
+            const Vec3 origin=botEye(bot);
+            const float targetFeet=std::max(0.f,player.y-player.eyeHeight());
+            const float bodyY=targetFeet+1.1f-CROUCH_DROP*player.crouch;
+            const float finalRange=distance(bot.pos,player.pos);
+            const float desiredPitch=std::atan2(bodyY-origin.y,std::max(.001f,finalRange));
+            bot.pitch=std::clamp(bot.pitch+std::clamp(desiredPitch-bot.recoilPitch-bot.pitch,-dt*AI_TURN_RATE,dt*AI_TURN_RATE),-1.35f,1.35f);
+            const float shotYaw=std::atan2(bot.pos.x-player.pos.x,bot.pos.z-player.pos.z);
+            const bool aimed=std::abs(std::remainder(shotYaw-bot.yaw-bot.recoilYaw,2*PI))<.15f&&std::abs(desiredPitch-bot.pitch-bot.recoilPitch)<.10f;
             auto& botGun=bot.guns[static_cast<std::size_t>(bot.selected)];
-            const float weaponRange=bot.selected==WeaponId::AW9?30.f:23.f;
-            if (wantsFire && finalRange < weaponRange && aimed && bot.cooldown <= 0 &&
-                (!trainedBots || (bot.switchRemaining<=0&&botGun.cooldown<=0&&botGun.reloadRemaining<=0&&botGun.ammo>0))
-                && botSees(bot, target, obstacles)
-                && lineOfSight(chest, muzzle, obstacles) && lineOfSight(muzzle, target, obstacles)) {
-                // Direct mt19937 integer conversion avoids platform-dependent
-                // uniform_real_distribution results in reproducibility tests.
-                if(trainedBots)botGun.fire();
-                bot.cooldown = (bot.selected==WeaponId::AW9?1.35f:1.15f)+static_cast<float>(random_()%6000)/10000.f;
-                bot.shotFlash = .08f;
-                // Preserve the existing rifle damage; sniper damage uses the
-                // same 1/4 player-weapon damage scale, not a training stat bonus.
-                const int damage=bot.selected==WeaponId::AW9?31:9;
-                player.health = std::max(0, player.health - damage);
-                damageFlash = .22f;
-                events.push_back({EventType::BotShot, static_cast<int>(i), bot.selected, bot.pos});
-                events.push_back({EventType::PlayerHit, static_cast<int>(i), bot.selected, player.pos, static_cast<float>(damage)});
-                if (player.health <= 0) {
-                    finish(false);
-                    noises.clear();
-                    return;
+            if(wantsFire&&finalRange<120&&aimed&&bot.cooldown<=0&&bot.switchRemaining<=0&&
+               botGun.cooldown<=0&&botGun.reloadRemaining<=0&&botGun.ammo>0&&botSees(bot,target,obstacles)){
+                if(!botGun.fire())continue;
+                bot.shotFlash=bot.selected==WeaponId::AW9?.09f:.055f;
+                events.push_back({EventType::BotShot,static_cast<int>(i),bot.selected,bot.pos});
+                const auto ray=fireDirection(bot.yaw,bot.pitch,bot.recoilYaw,bot.recoilPitch,botGun.spec,bot.speed,bot.crouch,bot.feet>.001f,random_);
+                const float headBase=targetFeet+1.55f-CROUCH_DROP*player.crouch;
+                const float head=rayBox(origin,ray,{player.pos.x-.18f,headBase,player.pos.z-.18f},
+                    {player.pos.x+.18f,headBase+.33f,player.pos.z+.18f});
+                const float body=rayBox(origin,ray,{player.pos.x-.31f,targetFeet+.2f,player.pos.z-.25f},
+                    {player.pos.x+.31f,headBase,player.pos.z+.25f});
+                if(std::min(head,body)<std::min(120.f,obstacleRay(origin,ray,obstacles))){
+                    const int damage=head<body?botGun.spec.headDamage:botGun.spec.bodyDamage;
+                    if(combatStep_)queuedPlayerDamage_+=damage;else player.health=std::max(0,player.health-damage);
+                    damageFlash=.22f;events.push_back({EventType::PlayerHit,static_cast<int>(i),bot.selected,player.pos,static_cast<float>(damage)});
                 }
+
             }
         }
         noises.clear();

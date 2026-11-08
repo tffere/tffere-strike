@@ -19,6 +19,28 @@ struct Observation {
         n=n*2+int(covered);n=n*2+int(known);return n*2+weapon;
     }
 };
+using ActionMask=std::array<bool,ACTIONS>;
+struct Readiness {
+    int ammo=30,otherAmmo=5;
+    float switching=0,commitment=0,reloading=0;
+    bool coverAvailable=false,muzzleClear=true;
+};
+inline ActionMask legalActions(const Observation& o,const Readiness& r){
+    ActionMask mask{};
+    if(!o.known){mask[Search]=true;return mask;}
+    mask[Chase]=mask[Left]=mask[Right]=true;
+    mask[Hide]=r.coverAvailable;
+    mask[Search]=!o.visible;
+    if(r.switching>0){mask.fill(false);mask[o.weapon?Sniper:Rifle]=true;return mask;}
+    if(r.reloading>0)return mask;
+    mask[Reload]=o.lowAmmo;
+    mask[Shoot]=o.visible&&r.ammo>0&&r.muzzleClear;
+    mask[o.weapon?Sniper:Rifle]=mask[Shoot];
+    bool usefulRange=o.weapon?o.range==0:o.range==2;
+    bool empty=r.ammo==0&&r.otherAmmo>0;
+    mask[o.weapon?Rifle:Sniper]=r.otherAmmo>0&&r.commitment<=0&&(usefulRange||empty);
+    return mask;
+}
 struct Policy {
     std::array<std::array<double,ACTIONS>,STATES> q{};
     std::array<std::array<unsigned,ACTIONS>,STATES> visits{};
@@ -27,6 +49,22 @@ struct Policy {
     }
     int choose(const Observation& o,double epsilon,std::mt19937& rng) const {
         return double(rng()%100000)/100000.<epsilon?int(rng()%ACTIONS):greedy(o);
+    }
+    int greedyMasked(const Observation& o,const ActionMask& allowed) const {
+        int best=-1;for(int a=0;a<ACTIONS;a++)if(allowed[a]&&(best<0||q[o.index()][a]>q[o.index()][best]))best=a;
+        return best<0?Search:best;
+    }
+    int chooseMasked(const Observation& o,const ActionMask& allowed,double epsilon,std::mt19937& rng) const {
+        if(double(rng()%100000)/100000.>=epsilon)return greedyMasked(o,allowed);
+        std::array<int,ACTIONS> options{};int count=0;
+        for(int a=0;a<ACTIONS;a++)if(allowed[a])options[count++]=a;
+        return count?options[rng()%count]:Search;
+    }
+    void learnMasked(int state,int action,double reward,int next,bool terminal,const ActionMask& allowed,
+                     double alpha=.10,double gamma=.995){
+        double future=0;bool found=false;
+        if(!terminal)for(int a=0;a<ACTIONS;a++)if(allowed[a]&&(!found||q[next][a]>future)){future=q[next][a];found=true;}
+        q[state][action]+=alpha*(reward+gamma*future-q[state][action]);visits[state][action]++;
     }
     void learn(int state,int action,double reward,int next,bool terminal) {
         auto& value=q[state][action];visits[state][action]++;

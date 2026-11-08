@@ -1,0 +1,12 @@
+alpha 0.10
+player_alpha_scale 0.25
+gamma 0.998
+damage 0.25
+taken 0.08
+switch_cost 0.40
+timeout 100
+win_reward 100
+time_cost 0.003
+epsilon_start 0.22
+epsilon_end 0.08
+curriculum 2

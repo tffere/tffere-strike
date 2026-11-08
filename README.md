@@ -1,21 +1,23 @@
-# Tffere Strike — Native C++ v1.5
+# Tffere Strike — Native C++ v1.6
 
 A standalone Windows desktop FPS written in C++17 with raylib. Play against six bots in a connected desert quarter, choose an AR-7 rifle or AW-9 sniper, use cover, and clear the depot before the round ends.
 
 ## Download and play on Windows
 
-1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.5-Windows-x64.zip).
+1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.6-Windows-x64.zip).
 2. Right-click the ZIP and select **Extract All**. Open the extracted `TffereStrike` folder.
 3. Double-click **TffereStrike.exe**. Keep its `assets` folder beside it.
 4. Click **Deploy into Depot**, or press **Enter**.
 
 No Node.js, npm, Python, browser, or development tools are needed to play. Requires Windows 10/11 x64 with an OpenGL 3.3-capable graphics driver. Extract the whole ZIP; do not run the executable from inside the archive. The executable is not digitally signed.
 
-## v1.5: versioned bot policies and real-game learning
+## v1.6: shared combat rules, recoil and two more training cycles
 
-The game loads a preserved prior policy by default. Press **F5** to switch to the labelled after-100-round experimental policy and restart the round. F5 switches back. Policy actions support guarded shooting, rifle/sniper selection, ammunition, reloads, hiding, chasing and flanking while preserving sensory restrictions. The bot's rifle damage stays 9; its new sniper deals 31 at the slower single-player bot cadence.
+Player and bots now share weapon damage/fire rates, health, hitboxes, movement limits, ammunition/reload timing and physical recoil/spread. Rifle cooldown is 0.115 seconds; bots no longer use the old slower cadence. Same-step mutual eliminations can draw. Switching guards prevent the prior weapon-switch loop, and blocked tactical routes follow their chosen goal.
 
-The latest requested experiment used **two independent learners in actual Game::step for 100 rounds**, followed by **20 frozen tests of the final game bot against the original player policy**. Result: **0 wins, 16 losses, 4 timeouts (0% win rate)**. No improvement is claimed. Both original/final policies and all logs are in the [authoritative real-game report](training/runs/2026-11-08-real-dual/REPORT.md). Earlier experiments are separate historical results. The player and bot roles retain their actual unequal weapon rules.
+Hold **Ctrl** to crouch or **Alt** to slow walk for tighter accuracy. Sprinting and jumping widen spread. Recoil affects both the actual shot and camera; controlled bursts let it recover. Both AI controllers use the same recoil rules and bounded aim compensation.
+
+Two more **100-round real Game::step cycles** trained separate bot and AI-player policies. Frozen 20-round tests stayed at **5 wins, 14 losses, 1 mutual elimination (25%)** before training, after 100 and after 200 rounds. No win-rate gain was measured. The game defaults to the final policy, labelled **AFTER 200 / RECOIL**. **F5** switches to the exact before-200 baseline and restarts the round. See the [full report and raw records](training/runs/2026-11-08-v1.6/REPORT.md), including earlier, separately labelled experiments.
 
 ## v1.4: crouch, bot postures and footsteps
 
@@ -32,7 +34,7 @@ Five distinct [Kenney concrete-footstep samples](https://kenney.nl/assets/impact
 - Hidden movement without a new audible cue cannot change a bot's target or route. Patrol destinations and starting facing directions are independent of player location. Bots do not share omniscient target information.
 - Shots leave dark, chipped bullet marks on walls, buildings and cover. Marks follow the hit face, project onto visible doors/trim, remain during the round, and clear on restart. The oldest mark is replaced after 256 impacts. Body hits and sky misses do not leave floating marks.
 
-The current Windows package passes 42 native gameplay/pose/policy cases and Microsoft Defender/ClamAV scans. Exact reports, hashes and limitations are bundled under `SCAN-REPORTS/` and recorded in [v1.5 validation](docs/security/v1.5/RECHECK.md). Scan results are not a guarantee of safety. The executable remains unsigned. A graphical Windows playtest is still needed.
+The current Windows package passes 49 native gameplay/pose/policy cases and Microsoft Defender/ClamAV scans. Exact reports, hashes and limitations are bundled under `SCAN-REPORTS/` and recorded in [v1.6 validation](docs/security/v1.6/RECHECK.md). Scan results are not a guarantee of safety. The executable remains unsigned. A graphical Windows playtest is still needed.
 
 For every shipped update, a new version number, Git tag, [GitHub Release](https://github.com/tffere/tffere-strike/releases) and versioned ZIP are preserved. Future patch rebuilds also receive a new version; previous versioned downloads are not overwritten.
 
@@ -43,6 +45,8 @@ Bots now run on approach, turn gradually, perform staggered jumps and crouch dur
 Bots acquire shots within a 120-degree horizontal field of view and fire only after aiming within roughly 10 degrees of the player. Every shot rechecks visibility after movement: the eye-to-player, chest-to-muzzle and muzzle-to-player paths must all be clear of collision objects. In the historical v1.2 release, bots still navigated toward a hidden player; v1.3 replaces this with evidence-based awareness. Jumping stays on navigable ground and does not vault obstacles.
 
 ## Keep previous versions
+
+- [v1.5: historical experimental policy](https://github.com/tffere/tffere-strike/releases/tag/v1.5)
 
 - [v1.4: Ctrl crouch, bot poses and sampled footsteps](https://github.com/tffere/tffere-strike/releases/tag/v1.4)
 
@@ -66,7 +70,8 @@ Extract each version into a separate folder. The `v1.0` and `v1.1` Git tags pres
 | Right mouse | Toggle sniper scope |
 | R | Reload; restart when paused |
 | Space | Jump |
-| Left Shift | Sprint |
+| Left Shift | Sprint; wider spread |
+| Hold Alt | Slow walk; tighter spread |
 | Hold Ctrl | Crouch: lower view, slower movement, quieter footsteps |
 | Escape | Pause/resume; close from the start/end menu |
 | Enter | Deploy / resume / new round |
@@ -74,7 +79,7 @@ Extract each version into a separate folder. The `v1.0` and `v1.1` Git tags pres
 | M | Mute/unmute sound |
 | F3 | Show performance info |
 | F4 | Toggle shadows |
-| F5 | Switch prior / experimental bot policy and restart round |
+| F5 | Switch before / after 200-round bot policy and restart round |
 
 ## Included
 
@@ -124,9 +129,9 @@ python3 native/build.py --platform windows --zig /path/to/zig --package
 
 ## Validation
 
-For v1.5, all 42 native gameplay/pose/policy tests pass on Linux and Windows, including hidden-player patrol independence, fixed last-seen memory, search expiry, muffled/discrete sound detection, grounded footsteps, bullet impact positions/caps, field of view, blocked shots, stance hitboxes and navigation. The eight earlier browser prototype tests also pass. The Windows x64 package is built with Visual Studio on a fresh GitHub Windows runner.
+For v1.6, all 49 native gameplay/pose/policy tests pass on Linux and Windows, including hidden-player patrol independence, fixed last-seen memory, search expiry, muffled/discrete sound detection, grounded footsteps, bullet impact positions/caps, field of view, blocked shots, stance hitboxes and navigation. The eight earlier browser prototype tests also pass. The Windows x64 package is built with Visual Studio on a fresh GitHub Windows runner.
 
-A graphical/listening Windows playtest of v1.5 has not been performed in this environment. The earlier v1.1 graphical smoke tests do not validate the new animation. Please try v1.5 on your Windows machine and report movement or rendering issues.
+A graphical/listening Windows playtest of v1.6 has not been performed in this environment. The earlier v1.1 graphical smoke tests do not validate the new animation. Please try v1.6 on your Windows machine and report movement or rendering issues.
 
 Launch with `--smoke-test` for a short graphical check and screenshot, or `--capture` for an initial gameplay view. Normal launches start at the menu.
 
@@ -136,4 +141,4 @@ Game geometry and combat cues are generated by the C++ application. Footstep sam
 
 ## Offline self-play training lab
 
-Use the [real-game headless training program](native/training/README.md): two role-specific policies learn for 100 rounds, then the game bot is tested for 20 rounds against the saved original player policy. Only actual game-code settings should be used for future learning. The full result and model artifacts are in the [latest report](training/runs/2026-11-08-real-dual/REPORT.md). The game includes the final bot candidate as an explicit F5 option; results do not establish broad tactical improvement.
+Use the [real-game headless training program](native/training/README.md): two role-specific policies learn for 100 rounds, then the game bot is tested for 20 rounds against the saved original player policy. Only actual game-code settings should be used for future learning. The full result and model artifacts are in the [latest report](training/runs/2026-11-08-v1.6/REPORT.md). The game defaults to the final 200-round bot and includes its starting baseline as an F5 option; results do not establish broad tactical improvement.

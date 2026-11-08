@@ -1,3 +1,7 @@
+# Current v1.6 campaign
+
+Use `strike-campaign BOT PLAYER REFERENCE EMPTY_OUT CYCLE CONFIG [test-only]` after building this CMake project. The latest requested two 100-round real-Game::step cycles and 20-round frozen progress evaluations are documented in [the v1.6 report](../../training/runs/2026-11-08-v1.6/REPORT.md). Separate roles both learn; shared physical rules include normal weapon rates and recoil. No measured improvement: 25% before, after 100 and after 200. F5 in v1.6 switches exact before/after policies. Older commands/results below are historical; do not use the simplified Duel for new learning.
+
 # Strike training lab 0.1
 
 A standalone C++17 headless 1v1 self-play trainer for experimenting with high-level combat decisions. No GPU, raylib runtime, Python packages or Unreal installation is needed. It includes collision/visibility/navigation/weapon mechanics from `gameplay.hpp`, but is a simplified simulator, not the full game. Nothing automatically changes the playable v1.4 bots.

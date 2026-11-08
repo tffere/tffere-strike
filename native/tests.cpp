@@ -22,8 +22,8 @@ void quiet(Game& game) {
 void aim(Game& game, Vec2 position, float height = 1.05f) {
     const float dx = position.x - game.player.pos.x;
     const float dz = position.z - game.player.pos.z;
-    game.player.yaw = std::atan2(-dx, -dz);
-    game.player.pitch = std::atan2(height - game.player.y, std::hypot(dx, dz));
+    game.player.yaw = std::atan2(-dx, -dz)-game.player.recoilYaw;
+    game.player.pitch = std::atan2(height - game.player.y, std::hypot(dx, dz))-game.player.recoilPitch;
 }
 bool hasEvent(const Game& game, EventType type) {
     return std::any_of(game.events.begin(), game.events.end(),
@@ -35,6 +35,64 @@ int main() {
     using namespace strike;
     using Test = std::pair<const char*, std::function<void()>>;
     const std::vector<Test> tests{
+        {"crouch and deliberate walking tighten spread while sprint and airborne widen it", [] {
+            float standing=accuracyMultiplier(0,0,false);
+            check(accuracyMultiplier(0,1,false)<standing,"crouch accuracy did not improve");
+            check(accuracyMultiplier(2,0,false)<accuracyMultiplier(4,0,false),"slow walk did not improve accuracy");
+            check(accuracyMultiplier(6,0,false)>accuracyMultiplier(4,0,false),"sprint spread did not increase");
+            check(accuracyMultiplier(4,0,true)>accuracyMultiplier(4,0,false),"airborne spread did not increase");
+        }},
+        {"firing produces recoverable physical recoil and Alt walking limits speed", [] {
+            Game g;g.start();quiet(g);g.obstacles.clear();g.shoot();
+            check(g.player.recoilPitch>0,"shot produced no recoil");float kick=g.player.recoilPitch;
+            for(int i=0;i<20;i++)g.step(.05f);
+            check(g.player.recoilPitch<kick*.01f,"recoil did not recover");
+            Input in;in.forward=in.walk=in.sprint=true;Vec2 before=g.player.pos;g.step(.25f,in);
+            check(near(distance(before,g.player.pos),.5f),"slow walk did not override sprint");
+        }},
+        {"player and bot share weapon specs and resolve lethal shots simultaneously", [] {
+            Game g;g.start();quiet(g);g.kills=5;g.obstacles.clear();g.player.pos={0,8};
+            auto& b=g.bots[0];b=Bot{};b.yaw=PI;
+            tactics::Policy p;for(auto& row:p.q)row[tactics::Shoot]=1;g.useBotPolicy(p);
+            for(int w=0;w<2;w++){
+                const auto& a=g.weapons[w].spec;const auto& c=b.guns[w].spec;
+                check(a.bodyDamage==c.bodyDamage&&a.headDamage==c.headDamage&&near(a.shotInterval,c.shotInterval)
+                    &&a.capacity==c.capacity&&a.initialReserve==c.initialReserve&&near(a.reloadSeconds,c.reloadSeconds),"unequal weapon settings");
+            }
+            aim(g,b.pos,1.1f);Input input;input.fire=true;
+            for(int i=0;i<20&&g.mode==Mode::Playing;i++)g.step(.05f,input);
+            check(g.mode==Mode::Draw&&g.player.health==0&&b.hp==0,"player-first shooting bias remains");
+        }},
+        {"visible nearby enemy is fired upon even with a passive learned preference", [] {
+            Game g;g.start();quiet(g);g.obstacles.clear();g.player.pos={0,-8};
+            auto& b=g.bots[0];b=Bot{};b.cooldown=0;
+            tactics::Policy p;for(auto& row:p.q)row[tactics::Search]=10;g.useBotPolicy(p);
+            g.step(.05f);check(hasEvent(g,EventType::BotShot)&&g.player.health==64,"nearby bot refused to fire");
+        }},
+        {"trained short-range policy cannot oscillate rifle and sniper", [] {
+            auto file=std::filesystem::path(__FILE__).parent_path()/"assets"/"bot-policy-after-100.txt";
+            Game g;g.useBotPolicy(tactics::Policy::load(file.string()));g.start();quiet(g);
+            g.obstacles.clear();g.player.pos={0,-8};auto& b=g.bots[0];b=Bot{};b.cooldown=0;
+            int switches=0,shots=0;for(int i=0;i<100;i++){
+                auto selected=b.selected;g.step(.05f);switches+=selected!=b.selected;
+                shots+=hasEvent(g,EventType::BotShot);
+            }
+            check(switches==0&&shots>0&&g.player.health<100,"old weapon loop survived guards");
+        }},
+        {"blocked flank navigates toward flank destination rather than enemy", [] {
+            Game g;g.start();quiet(g);g.player.pos={0,-10};g.obstacles={{2.5f,0,1,4,3}};
+            auto& b=g.bots[0];b=Bot{};b.cooldown=100;
+            tactics::Policy p;for(auto& row:p.q)row[tactics::Left]=1;g.useBotPolicy(p);
+            auto expected=navigationWaypoint({0,0},{5,0},g.obstacles);g.step(.05f);
+            check(distance(b.navigationTarget,expected)<.001f,"flank routed toward enemy");
+        }},
+        {"masked learning does not bootstrap from forbidden actions", [] {
+            tactics::Policy p;auto o=tactics::Observation{};p.q[o.index()][tactics::Sniper]=100;
+            tactics::ActionMask mask{};mask[tactics::Search]=true;
+            p.learnMasked(o.index(),tactics::Chase,0,o.index(),false,mask,1,1);
+            check(near(float(p.q[o.index()][tactics::Chase]),0),"illegal Q target used");
+            check(p.greedyMasked(o,mask)==tactics::Search,"policy chose illegal action");
+        }},
         {"both versioned bot policies load and differ", [] {
             auto folder=std::filesystem::path(__FILE__).parent_path()/"assets";
             auto prior=tactics::Policy::load((folder/"bot-policy.txt").string());
@@ -52,13 +110,13 @@ int main() {
             check(g.trainedBots,"shipped policy was not enabled");
         }},
         {"trained policy switches weapons with delay and tracks sniper ammunition", [] {
-            Game g;g.start();quiet(g);g.obstacles.clear();g.player.pos={0,-8};
+            Game g;g.start();quiet(g);g.obstacles.clear();g.player.pos={0,-24};
             auto& b=g.bots[0];b=Bot{};b.pos={0,0};b.cooldown=0;
             tactics::Policy p;for(auto& row:p.q)row[tactics::Sniper]=1;g.useBotPolicy(p);
             g.step(.05f);check(b.selected==WeaponId::AW9,"policy did not select sniper");
             check(g.player.health==100&&b.guns[1].ammo==5,"switch fired early");
             for(int i=0;i<8;i++)g.step(.05f);
-            check(b.guns[1].ammo==4&&g.player.health==69,"sniper did not obey ammo/damage");
+            check(b.guns[1].ammo==4&&g.player.health==0,"sniper did not obey ammo/damage");
             check(b.guns[0].ammo==30,"switch destroyed rifle ammunition");
         }},
         {"trained reload consumes reserve and policy survives restart", [] {
@@ -66,7 +124,7 @@ int main() {
             auto& b=g.bots[0];b=Bot{};b.selected=WeaponId::AW9;b.guns[1].ammo=0;
             tactics::Policy p;for(auto& row:p.q)row[tactics::Reload]=1;g.useBotPolicy(p);
             for(int i=0;i<60;i++)g.step(.05f);
-            check(b.guns[1].ammo==5&&b.guns[1].reserve==15,"trained reload failed");
+            check(b.guns[1].ammo>0&&b.guns[1].ammo<=5&&b.guns[1].reserve==15&&b.guns[1].reloadRemaining==0,"trained reload failed");
             g.restart();check(g.trainedBots&&g.bots[0].guns[1].ammo==5,"restart lost policy/reset weapon state");
         }},
         {"trained hidden-player navigation uses evidence, not live coordinates", [] {
@@ -185,7 +243,7 @@ int main() {
         {"footsteps require actual grounded travel and do not reveal silent players", [] {
             Game g;g.start();quiet(g);g.obstacles.clear();
             auto& b=g.bots[0];b=Bot{};b.interest={0,-20};b.patrolRemaining=100;b.cooldown=100;
-            g.player.pos={0,5};g.player.yaw=PI;
+            g.player.pos={0,3};g.player.yaw=PI;
             g.step(.25f);
             check(b.awareness==Awareness::Patrol,"standing player made footsteps");
             Input in;in.forward=true;g.step(.25f,in);g.step(.1f,in);
@@ -200,7 +258,7 @@ int main() {
             g.obstacles={{0,0,4,2,4},{0,-5,4,2,4}};
             g.shoot();check(g.impacts.size()==1,"wall shot left no mark");
             const auto& m=g.impacts.back();
-            check(near(m.point.z,1)&&near(m.normal.z,1)&&near(m.point.y,EYE_HEIGHT),"mark on wrong face");
+            check(near(m.point.z,1)&&near(m.normal.z,1)&&std::abs(m.point.y-EYE_HEIGHT)<.04f,"mark on wrong face");
             for(int i=0;i<270;i++){g.weapon().ammo=30;g.weapon().cooldown=0;g.shoot();}
             check(g.impacts.size()==256,"impact limit not enforced");
             g.restart();check(g.impacts.empty(),"marks survived restart");
@@ -227,13 +285,13 @@ int main() {
             check(std::abs(b.yaw)<=.351f,"bot snapped to target");
             check(!hasEvent(game,EventType::BotShot),"bot fired outside vision");
         }},
-        {"muzzle cover blocks firing even when eyes see over it", [] {
+        {"shared eye-origin shots clear low cover when the ray is unobstructed", [] {
             Game game; game.start(); quiet(game); game.player.pos={0,-5};
             auto& b=game.bots[0]; b.hp=100; b.pos={0,0}; b.yaw=0; b.cooldown=0;
             game.obstacles={{0,-.5f,3,.2f,1.5f}};
             check(botSees(b,{0,1.7f,-5},game.obstacles),"eyes should see over cover");
             game.step(.02f);
-            check(!hasEvent(game,EventType::BotShot),"barrel fired through cover");
+            check(hasEvent(game,EventType::BotShot)&&game.player.health==64,"eye-origin bot shot differs from player settings");
         }},
         {"bots run, jump, land and crouch on staggered action timers", [] {
             Game game; game.start(); game.obstacles.clear(); quiet(game);
@@ -255,7 +313,7 @@ int main() {
             auto& b=game.bots[0]; b.hp=100; b.pos={0,5}; b.crouch=1;
             aim(game,b.pos,1.7f); game.shoot();
             check(!game.lastShot.hit,"standing head ray hit crouching bot");
-            game.weapon().cooldown=0; aim(game,b.pos,1.15f); game.shoot();
+            game.weapon().cooldown=0; aim(game,b.pos,EYE_HEIGHT-CROUCH_DROP); game.shoot();
             check(game.lastShot.hit && game.lastShot.headshot,"crouching head missed");
             b.hp=100; b.crouch=0; b.feet=1; game.weapon().cooldown=0;
             aim(game,b.pos,.6f); game.shoot();
@@ -423,9 +481,9 @@ int main() {
             const float before = distance(bot.pos, game.player.pos);
             game.step(.1f);
             check(distance(bot.pos, game.player.pos) < before, "bot did not approach");
-            check(game.player.health == 91 && hasEvent(game, EventType::BotShot), "bot failed to attack");
+            check(game.player.health == 64 && hasEvent(game, EventType::BotShot), "bot failed to attack");
             game.player.health = 9; bot.cooldown = 0;
-            game.step(.1f);
+            game.step(.15f);
             check(game.mode == Mode::Lost && game.player.health == 0, "bot did not cause defeat");
         }},
         {"six eliminations win and restart restores all round state", [] {

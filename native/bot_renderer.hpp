@@ -59,7 +59,7 @@ struct BotRenderer {
                 auto blockedFall=[&](float direction){return strike::circleBlocked(
                     {b.pos.x-forward.x*direction,b.pos.z-forward.z*direction},.3f,game.obstacles);};
                 if(blockedFall(p.deathDirection)&&!blockedFall(-p.deathDirection))p.deathDirection=-p.deathDirection;
-                p.deathHip=.94f-.55f*b.crouch;
+                p.deathHip=.94f-strike::CROUCH_DROP*b.crouch;
             }
             float travelled=strike::distance(p.previous,b.pos);float speed=dt>0?travelled/dt:0;
             p.previous=b.pos;p.speed+=(speed-p.speed)*std::min(1.f,dt*10);
@@ -92,7 +92,7 @@ struct BotRenderer {
         auto fall=strike::collapsePose(p.death,p.deathHip,p.deathDirection,index);
         float collapse=fall.legFold;
         if(!b.alive()){motion*=1-collapse;running*=1-collapse;}
-        const float hipY=b.alive()?.94f-.55f*crouch:fall.hipHeight;
+        const float hipY=b.alive()?.94f-strike::CROUCH_DROP*crouch:fall.hipHeight;
         float bounce=std::abs(std::sin(phase))*(.018f+.025f*running)*motion*(1-airborne);
         float breathe=std::sin(elapsed*2.1f+index)*.004f*(1-collapse);
         float lean=std::sin(elapsed*.65f+index)*.025f*(1-motion);
@@ -102,7 +102,7 @@ struct BotRenderer {
         // Feet travel through an alternating planted/swing cycle; knees bend forward.
         for(int side=-1;side<=1;side+=2){
             float q=phase+(side<0?PI:0),swing=std::sin(q),lift=std::max(0.f,std::cos(q))*(.10f+.12f*running)*motion*(1-airborne);
-            Vector3 hip{side*.105f,.94f-.55f*crouch,0},knee{side*.105f,.49f-.15f*crouch-lift*.2f,-.045f-.25f*crouch-.18f*airborne-std::max(0.f,swing)*(.12f+.1f*running)*motion};
+            Vector3 hip{side*.105f,.94f-strike::CROUCH_DROP*crouch,0},knee{side*.105f,.49f-.15f*crouch-lift*.2f,-.045f-.25f*crouch-.18f*airborne-std::max(0.f,swing)*(.12f+.1f*running)*motion};
             Vector3 ankle{side*.11f,.10f+lift,swing*(.20f+.13f*running)*motion*(1-airborne)};
             hip.y=hipY;
             knee=Vector3Lerp(knee,{side*(.18f+.025f*(index%2)),.13f,-p.deathDirection*.38f},collapse);

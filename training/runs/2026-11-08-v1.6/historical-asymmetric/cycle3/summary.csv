@@ -1,0 +1,2 @@
+cycle,training_games,wins,losses,timeouts,win_rate,mean_damage,shots,switches,zero_shot_games
+3,100,0,15,5,0,9.1,8,8,13

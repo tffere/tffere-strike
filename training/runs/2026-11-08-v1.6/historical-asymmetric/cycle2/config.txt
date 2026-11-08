@@ -1,0 +1,9 @@
+alpha 0.08
+gamma 0.997
+damage 0.15
+taken 0.08
+switch_cost 0.40
+timeout 35
+epsilon_start 0.25
+epsilon_end 0.10
+curriculum 1

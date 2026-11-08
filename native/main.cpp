@@ -304,15 +304,15 @@ int main(int argc,char** argv){
     for(int i=1;i<argc;i++){if(!std::strcmp(argv[i],"--smoke-test"))smoke=true;if(!std::strcmp(argv[i],"--capture"))capture=true;if(!std::strcmp(argv[i],"--capture-nw")){capture=true;sectorCapture=4;}if(!std::strcmp(argv[i],"--capture-ne")){capture=true;sectorCapture=5;}if(!std::strcmp(argv[i],"--capture-sw")){capture=true;sectorCapture=6;}if(!std::strcmp(argv[i],"--capture-se")){capture=true;sectorCapture=7;}if(!std::strcmp(argv[i],"--capture-long")){capture=true;sectorCapture=1;}if(!std::strcmp(argv[i],"--capture-west")){capture=true;sectorCapture=2;}if(!std::strcmp(argv[i],"--capture-court")){capture=true;sectorCapture=3;}if(!std::strcmp(argv[i],"--bot-capture")){botCapture=true;capture=true;}if(!std::strcmp(argv[i],"--map-capture")){mapCapture=true;capture=true;}}
     std::filesystem::path base=std::filesystem::absolute(argv[0]).parent_path();
     SetTraceLogLevel(LOG_WARNING);SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT|FLAG_VSYNC_HINT);
-    InitWindow(1280,720,"Tffere Strike v1.5 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
+    InitWindow(1280,720,"Tffere Strike v1.6 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
     int exitCode=0;
     try{
         std::filesystem::path assets=base/"assets";
         if(!std::filesystem::exists(assets/"materials.png"))assets=std::filesystem::path(GetWorkingDirectory())/"native/assets";
         Graphics gfx(assets.string());strike::Game game(true);
         auto priorPolicy=strike::tactics::Policy::load((assets/"bot-policy.txt").string());
-        auto after100Policy=strike::tactics::Policy::load((assets/"bot-policy-after-100.txt").string());
-        bool experimentalAI=false;game.useBotPolicy(priorPolicy);buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
+        auto trainedPolicy=strike::tactics::Policy::load((assets/"bot-policy-trained.txt").string());
+        bool experimentalAI=true;game.useBotPolicy(trainedPolicy);buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
         for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--no-shadows"))gfx.shadows=false;Audio audio(!smoke,assets.string());
         float recoil=0,scope=0,walk=0,switchAnim=0,hitFade=0;
         WeaponId previous=WeaponId::AR7;int frames=0;bool debug=false,blockFire=false;std::vector<Tracer> tracers;
@@ -336,12 +336,12 @@ int main(int argc,char** argv){
             if(IsKeyPressed(KEY_M))audio.muted=!audio.muted;
             strike::Input input;
             if(IsKeyPressed(KEY_F5)){
-                experimentalAI=!experimentalAI;game.useBotPolicy(experimentalAI?after100Policy:priorPolicy);
+                experimentalAI=!experimentalAI;game.useBotPolicy(experimentalAI?trainedPolicy:priorPolicy);
                 input.restart=true;
             }
             if(game.mode==Mode::Playing){
                 input.forward=IsKeyDown(KEY_W);input.backward=IsKeyDown(KEY_S);input.left=IsKeyDown(KEY_A);input.right=IsKeyDown(KEY_D);
-                input.crouch=IsKeyDown(KEY_LEFT_CONTROL)||IsKeyDown(KEY_RIGHT_CONTROL);input.sprint=IsKeyDown(KEY_LEFT_SHIFT);input.jump=IsKeyPressed(KEY_SPACE);input.fire=IsMouseButtonDown(MOUSE_BUTTON_LEFT)&&!blockFire;
+                input.walk=IsKeyDown(KEY_LEFT_ALT)||IsKeyDown(KEY_RIGHT_ALT);input.crouch=IsKeyDown(KEY_LEFT_CONTROL)||IsKeyDown(KEY_RIGHT_CONTROL);input.sprint=IsKeyDown(KEY_LEFT_SHIFT);input.jump=IsKeyPressed(KEY_SPACE);input.fire=IsMouseButtonDown(MOUSE_BUTTON_LEFT)&&!blockFire;
                 if(!IsMouseButtonDown(MOUSE_BUTTON_LEFT))blockFire=false;
                 input.reload=IsKeyPressed(KEY_R);input.toggleScope=IsMouseButtonPressed(MOUSE_BUTTON_RIGHT);
                 input.selectAR7=IsKeyPressed(KEY_ONE);input.selectAW9=IsKeyPressed(KEY_TWO);
@@ -415,7 +415,7 @@ int main(int argc,char** argv){
             tracers.erase(std::remove_if(tracers.begin(),tracers.end(),[](auto t){return t.life<=0;}),tracers.end());
             float bob=game.mode==Mode::Playing&&playerTravel>.0001f&&game.player.y<=game.player.eyeHeight()+.001f?std::sin(walk)*.025f*(1-scope)*(1-.7f*game.player.crouch):0;
             Vector3 eye{game.player.pos.x,game.player.y+bob,game.player.pos.z};
-            Vector3 direction=V(strike::viewDirection(game.player.yaw,game.player.pitch));
+            Vector3 direction=V(strike::viewDirection(game.player.yaw+game.player.recoilYaw,game.player.pitch+game.player.recoilPitch));
             Camera3D camera{eye,Vector3Add(eye,direction),{0,1,0},68-scope*48,CAMERA_PERSPECTIVE};
             if(game.mode==Mode::Ready){camera.position={.3f,2.1f,18};camera.target={0,2,-8};}
             if(mapCapture){camera.position={52,68,60};camera.target={0,0,0};camera.fovy=70;camera.projection=CAMERA_ORTHOGRAPHIC;}
@@ -477,7 +477,7 @@ int main(int argc,char** argv){
                 DrawRectangleGradientV(0,0,int(sw),int(105*ui),{10,17,23,205},{10,17,23,0});
                 DrawRectangleGradientV(0,int(sh-120*ui),int(sw),int(120*ui),{10,17,23,0},{10,17,23,220});
                 text(gfx.font,"TFFERE",30*ui,24*ui,22*ui,PALE,3*ui);text(gfx.font,"STRIKE",139*ui,24*ui,22*ui,SAND,3*ui);
-                text(gfx.font,experimentalAI?"AI: AFTER 100 ROUNDS / EXPERIMENTAL [F5]":"AI: PRIOR POLICY [F5]",31*ui,53*ui,9*ui,{161,178,183,255},2*ui);
+                text(gfx.font,experimentalAI?"AI: AFTER 200 / RECOIL [F5]":"AI: BEFORE 200 / RECOIL [F5]",31*ui,53*ui,9*ui,{161,178,183,255},2*ui);
                 center(gfx.font,"SANDSTONE / OLD QUARTER",sw/2,26*ui,11*ui,SAND);
                 center(gfx.font,"ELIMINATE THE PATROL",sw/2,48*ui,15*ui,PALE);
                 int seconds=std::max(0,int(game.timeLeft));
@@ -518,7 +518,7 @@ int main(int argc,char** argv){
                 text(gfx.font,"TFFERE",card.x+35*ui,card.y+78*ui,60*ui,PALE,4*ui);
                 text(gfx.font,"STRIKE",card.x+35*ui,card.y+142*ui,60*ui,SAND,4*ui);
                 DrawRectangle(card.x+39*ui,card.y+222*ui,54*ui,2*ui,SAND);
-                const char* title=game.mode==Mode::Ready?"SANDSTONE / OLD QUARTER":game.mode==Mode::Paused?"MISSION PAUSED":game.mode==Mode::Won?"DEPOT SECURED":"MISSION FAILED";
+                const char* title=game.mode==Mode::Ready?"SANDSTONE / OLD QUARTER":game.mode==Mode::Paused?"MISSION PAUSED":game.mode==Mode::Won?"DEPOT SECURED":game.mode==Mode::Draw?"ROUND DRAW":"MISSION FAILED";
                 text(gfx.font,title,card.x+39*ui,card.y+248*ui,17*ui,PALE,2*ui);
                 const char* copy=game.mode==Mode::Ready?"Six patrol units. Three routes. One old quarter.":game.mode==Mode::Paused?"Your round is paused. Resume when ready.":game.mode==Mode::Won?"All patrol units eliminated. Good work.":"Change lanes, use cover, and try again.";
                 text(gfx.font,copy,card.x+39*ui,card.y+283*ui,14*ui,{166,185,192,255});
@@ -528,7 +528,7 @@ int main(int argc,char** argv){
                 text(gfx.font,action,playButton.x+24*ui,playButton.y+19*ui,13*ui,INK,2*ui);
                 text(gfx.font,"WASD   MOVE       MOUSE   LOOK / FIRE",card.x+39*ui,card.y+425*ui,11*ui,PALE);
                 text(gfx.font,"1 / 2  WEAPONS    RIGHT CLICK   SCOPE",card.x+39*ui,card.y+453*ui,11*ui,PALE);
-                text(gfx.font,"R  RELOAD    SPACE  JUMP    SHIFT  SPRINT   CTRL  CROUCH",card.x+39*ui,card.y+481*ui,11*ui,PALE);
+                text(gfx.font,"R  RELOAD    SPACE  JUMP    SHIFT SPRINT  CTRL CROUCH  ALT WALK",card.x+39*ui,card.y+481*ui,11*ui,PALE);
                 text(gfx.font,"ENTER / START   ESC / PAUSE   F5 / AI POLICY   F11 / FULLSCREEN",card.x+39*ui,card.y+523*ui,9*ui,{130,152,163,255});
             }
             if(debug)text(gfx.font,TextFormat("%d FPS | SHADOWS %s [F4] | M AUDIO",GetFPS(),gfx.shadows?"ON":"OFF"),15,sh-15,11,WHITE);

@@ -25,7 +25,8 @@ jobs:
           Extract the entire folder and double-click TffereStrike.exe.
           Keep assets next to the executable. No Node.js or browser is needed.
           WASD move, mouse look/fire, 1 rifle, 2 sniper, right-click scope,
-          R reload, Space jump, Shift sprint, Escape pause, Enter deploy.
+          R reload, Space jump, Shift sprint, Ctrl crouch, Alt slow walk,
+          F5 before/after 200-round policy, Escape pause, Enter deploy.
           Windows x64 and an OpenGL 3.3 graphics driver are required.
           '@ | Set-Content TffereStrike/READ-ME.txt
       - name: Scan portable game with Microsoft Defender
