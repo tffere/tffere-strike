@@ -1,0 +1,16 @@
+
+AMProductVersion              : 4.18.26100.4
+AntivirusSignatureVersion     : 1.463.110.0
+AntivirusSignatureLastUpdated : 11/3/2026 11:21:45 AM
+
+
+Scan starting...
+Scan finished.
+Scanning D:\a\tffere-strike\tffere-strike/TffereStrike found no threats.
+Scanner exit code: 0
+
+Algorithm : SHA256
+Hash      : 5BE453D60F410625FD39DDCD3172AF6478A7019CCA68B4D51AC2CEC20A553404
+Path      : D:\a\tffere-strike\tffere-strike\TffereStrike\TffereStrike.exe
+
+

@@ -1,0 +1,35 @@
+name: Publish versioned release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Existing version tag (for example v1.3)
+        required: true
+        type: string
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version }}
+      - name: Verify versioned package and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_VERSION" =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]
+          package="TffereStrike-${RELEASE_VERSION}-Windows-x64.zip"
+          test -f "downloads/$package"
+          test -f "docs/releases/$RELEASE_VERSION.md"
+          test -f "docs/security/$RELEASE_VERSION/RECHECK.md"
+          cd downloads
+          awk -v name="$package" '$2 == name' SHA256SUMS.txt > RELEASE-SHA256SUMS.txt
+          test -s RELEASE-SHA256SUMS.txt
+          sha256sum --check RELEASE-SHA256SUMS.txt
+          cd ..
+          gh release create "$RELEASE_VERSION" "downloads/$package" downloads/RELEASE-SHA256SUMS.txt --verify-tag --title "Tffere Strike $RELEASE_VERSION" --notes-file "docs/releases/$RELEASE_VERSION.md"
