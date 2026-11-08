@@ -13,3 +13,6 @@ native-build/
 
 __pycache__/
 *.py[cod]
+
+# Local experiment scratch; reviewed results live under training/runs/
+/work/

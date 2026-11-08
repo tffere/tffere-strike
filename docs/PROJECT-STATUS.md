@@ -43,3 +43,11 @@ The user asked about Blender, Source and Unreal and explicitly said NOT to start
 ## Tactical intelligence measurement
 
 User requested a measurable bot IQ score and asked for the current score. Added `native/ai_benchmark.cpp`, a deterministic 24-probe, six-dimension tactical benchmark, plus methodology and a frozen v1.4 baseline under docs/. This is a scenario score, not human IQ or visual quality. It intentionally measures missing tactics/teamwork instead of masking them with basic correctness passes. No game behavior/binary was changed; game remains v1.4. Read `docs/AI-BENCHMARK.md` before comparing future versions. Keep benchmark thresholds and weights fixed, and do not claim four basic sensor passes mean universally perfect perception.
+
+## Offline self-play training lab 0.1
+
+User authorized training bots against each other for 100 rounds to improve combat action choices, with progress at least every 10 minutes. Implemented native/training/ (standalone C++17/CMake, no graphics dependency) and executed a 100-round pilot, then a corrected independent 100-round experiment after the pilot regressed. Reproduced the corrected run from scratch with matching CSV/policy values. Two fighters share one learning Q-table (192 states, 9 actions); evaluation freezes it against two fixed opponents using separate seeds and alternating sides. Validation selects checkpoint 30, although all 100 rounds completed. Final policy/10 checkpoints/raw logs/report are under training/runs/2026-11-08/.
+
+Corrected held-out wins vs rifle chaser: 42% starting → 68% selected. Vs weapon-aware defender: 28% → 22% wins, losses 60% → 14%, draws 12% → 64%. Do not present survival/stalling as improved winning tactics. Report retains rejected pilot (wins 43→22 and 31→17), policies, schema difference and limitations. Final tests use seeds 200000..200099; do not tune against them. Full gameplay regression tests still pass.
+
+This is a simplified 1v1 simulator, not a new Windows game release. Live game remains v1.4 and tactical benchmark remains 62.5 overall, 0 tactics. No learned policy is installed in the live game. Future transfer needs a new version and aligned runtime weapons/observations/actions; the current game does not load STRIKE_Q_V2 policy files. User explicitly said not to start Unreal; no Unreal project was started.

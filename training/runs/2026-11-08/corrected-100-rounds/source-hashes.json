@@ -1,0 +1,6 @@
+{
+  "native/training/self_play.hpp": "aa3d47d45f0bc97316a8199610f204aee61607d8215271452f4f609062ea482a",
+  "native/training/train_bots.cpp": "7fb6d7a40e615ec548f86f07d69bde822f3f0d7574cf7f636e7b802e0ec207fc",
+  "native/training/tests.cpp": "6874ed2185eb214fcce5f304f85e1a97e0df51c205f268dac4fdbeb512ea6e09",
+  "native/gameplay.hpp": "51d81fdd821f0ea102ce5840edf861a096160418655887d35d7c38e296eb4704"
+}

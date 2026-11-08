@@ -1,0 +1,16 @@
+{
+  "rifle_chaser": {
+    "paired_match_score_difference": 0.23,
+    "bootstrap_95_interval": [
+      0.125,
+      0.33
+    ]
+  },
+  "weapon_aware_defender": {
+    "paired_match_score_difference": 0.2,
+    "bootstrap_95_interval": [
+      0.12,
+      0.28
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+opponent,policy,wins,draws,losses,win_rate,mean_damage,shots,hits,switches,cover_entries
+rifle_chaser,initial,43,16,41,0.43,67.72,458,199,0,6
+rifle_chaser,trained,22,14,64,0.22,27.88,98,63,49,9
+weapon_aware_defender,initial,31,10,59,0.31,47.56,294,139,0,5
+weapon_aware_defender,trained,17,13,70,0.17,20.52,86,57,4,25
