@@ -4,7 +4,8 @@ namespace strike::training {
 struct PlayerOpponent {
     bool advanced=false,known=false;Vec2 evidence{},waypoint{},explore{};
     float memory=0,decision=0,navigation=0,switchDelay=0,targetY=1.1f;
-    int action=tactics::Search;unsigned searchStep=0;
+    int action=tactics::Search,forcedAction=-1;unsigned searchStep=0;
+    const tactics::Policy* policy=nullptr;
     explicit PlayerOpponent(bool stronger):advanced(stronger){}
     bool sees(const Game& game) const {
         Bot eyes;eyes.pos=game.player.pos;eyes.yaw=game.player.yaw;eyes.feet=game.player.y-EYE_HEIGHT;
@@ -25,6 +26,15 @@ struct PlayerOpponent {
             }
         }
     }
+    tactics::Observation observation(const Game& game) const {
+        const bool seen=sees(game),hasEvidence=seen||known;
+        const Vec2 point=seen?game.bots[0].pos:evidence;
+        const auto& p=game.player;const auto& gun=game.weapon();
+        const float range=hasEvidence?distance(p.pos,point):40;
+        const bool covered=hasEvidence&&!lineOfSight({p.pos.x,p.y,p.pos.z},{point.x,1.7f,point.z},game.obstacles);
+        return {seen,hasEvidence,covered,p.health<=40,gun.ammo<=int(gun.spec.capacity*.2f),
+                range<9?0:range<18?1:2,int(game.selectedWeapon)};
+    }
     Input input(Game& game) {
         bool visible=sees(game);const auto& p=game.player;
         float range=known?distance(p.pos,evidence):40;
@@ -32,17 +42,26 @@ struct PlayerOpponent {
         const auto& gun=game.weapon();
         tactics::Observation o{visible,known,covered,p.health<=40,gun.ammo<=int(gun.spec.capacity*.2f),range<9?0:range<18?1:2,int(game.selectedWeapon)};
         decision-=.05f;navigation-=.05f;switchDelay=std::max(0.f,switchDelay-.05f);
-        if(decision<=.0001f){action=tactics::fixedAction(o,advanced);decision=.25f;}
+        if(decision<=.0001f){
+            action=forcedAction>=0?forcedAction:policy?(o.known?policy->greedy(o):tactics::Search):tactics::fixedAction(o,advanced);
+            decision=.25f;
+        }
         Input in;
         if(action==tactics::Rifle&&game.selectedWeapon!=WeaponId::AR7){in.selectAR7=true;switchDelay=.35f;}
         if(action==tactics::Sniper&&game.selectedWeapon!=WeaponId::AW9){in.selectAW9=true;switchDelay=.35f;}
         in.reload=action==tactics::Reload;
         bool attack=action==tactics::Shoot||action==tactics::Rifle||action==tactics::Sniper;
         in.fire=attack&&visible&&switchDelay<=0;
-        bool moving=action==tactics::Hide||action==tactics::Chase||action==tactics::Search;
+        bool moving=action==tactics::Hide||action==tactics::Chase||action==tactics::Search||action==tactics::Left||action==tactics::Right;
+        if(!known||(attack&&!visible))moving=true;
         Vec2 goal=p.pos;
         if(action==tactics::Hide&&known){Bot proxy;proxy.pos=p.pos;proxy.searchCenter=evidence;goal=game.botCoverGoal(proxy);}
-        else if(action==tactics::Chase&&known)goal=evidence;
+        else if(known&&(action==tactics::Chase||(attack&&!visible)))goal=evidence;
+        else if(known&&(action==tactics::Left||action==tactics::Right)){
+            float dx=evidence.x-p.pos.x,dz=evidence.z-p.pos.z,d=std::max(.01f,std::hypot(dx,dz));
+            float side=action==tactics::Left?-1.f:1.f;
+            goal={std::clamp(p.pos.x+side*dz/d*5,-30.f,30.f),std::clamp(p.pos.z-side*dx/d*5,-30.f,30.f)};
+        }
         else if(moving){
             if(distance(p.pos,explore)<1||searchStep==0){
                 float a=float(++searchStep)*2.39996f;explore={std::cos(a)*3,std::sin(a)*20};

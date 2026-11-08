@@ -309,7 +309,10 @@ int main(int argc,char** argv){
     try{
         std::filesystem::path assets=base/"assets";
         if(!std::filesystem::exists(assets/"materials.png"))assets=std::filesystem::path(GetWorkingDirectory())/"native/assets";
-        Graphics gfx(assets.string());strike::Game game(true);game.useBotPolicy(strike::tactics::Policy::load((assets/"bot-policy.txt").string()));buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
+        Graphics gfx(assets.string());strike::Game game(true);
+        auto priorPolicy=strike::tactics::Policy::load((assets/"bot-policy.txt").string());
+        auto after100Policy=strike::tactics::Policy::load((assets/"bot-policy-after-100.txt").string());
+        bool experimentalAI=false;game.useBotPolicy(priorPolicy);buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
         for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--no-shadows"))gfx.shadows=false;Audio audio(!smoke,assets.string());
         float recoil=0,scope=0,walk=0,switchAnim=0,hitFade=0;
         WeaponId previous=WeaponId::AR7;int frames=0;bool debug=false,blockFire=false;std::vector<Tracer> tracers;
@@ -332,6 +335,10 @@ int main(int argc,char** argv){
             if(IsKeyPressed(KEY_F4))gfx.shadows=!gfx.shadows;
             if(IsKeyPressed(KEY_M))audio.muted=!audio.muted;
             strike::Input input;
+            if(IsKeyPressed(KEY_F5)){
+                experimentalAI=!experimentalAI;game.useBotPolicy(experimentalAI?after100Policy:priorPolicy);
+                input.restart=true;
+            }
             if(game.mode==Mode::Playing){
                 input.forward=IsKeyDown(KEY_W);input.backward=IsKeyDown(KEY_S);input.left=IsKeyDown(KEY_A);input.right=IsKeyDown(KEY_D);
                 input.crouch=IsKeyDown(KEY_LEFT_CONTROL)||IsKeyDown(KEY_RIGHT_CONTROL);input.sprint=IsKeyDown(KEY_LEFT_SHIFT);input.jump=IsKeyPressed(KEY_SPACE);input.fire=IsMouseButtonDown(MOUSE_BUTTON_LEFT)&&!blockFire;
@@ -470,7 +477,7 @@ int main(int argc,char** argv){
                 DrawRectangleGradientV(0,0,int(sw),int(105*ui),{10,17,23,205},{10,17,23,0});
                 DrawRectangleGradientV(0,int(sh-120*ui),int(sw),int(120*ui),{10,17,23,0},{10,17,23,220});
                 text(gfx.font,"TFFERE",30*ui,24*ui,22*ui,PALE,3*ui);text(gfx.font,"STRIKE",139*ui,24*ui,22*ui,SAND,3*ui);
-                text(gfx.font,"NATIVE / TACTICAL TRAINING",31*ui,53*ui,9*ui,{161,178,183,255},2*ui);
+                text(gfx.font,experimentalAI?"AI: AFTER 100 ROUNDS / EXPERIMENTAL [F5]":"AI: PRIOR POLICY [F5]",31*ui,53*ui,9*ui,{161,178,183,255},2*ui);
                 center(gfx.font,"SANDSTONE / OLD QUARTER",sw/2,26*ui,11*ui,SAND);
                 center(gfx.font,"ELIMINATE THE PATROL",sw/2,48*ui,15*ui,PALE);
                 int seconds=std::max(0,int(game.timeLeft));
@@ -522,7 +529,7 @@ int main(int argc,char** argv){
                 text(gfx.font,"WASD   MOVE       MOUSE   LOOK / FIRE",card.x+39*ui,card.y+425*ui,11*ui,PALE);
                 text(gfx.font,"1 / 2  WEAPONS    RIGHT CLICK   SCOPE",card.x+39*ui,card.y+453*ui,11*ui,PALE);
                 text(gfx.font,"R  RELOAD    SPACE  JUMP    SHIFT  SPRINT   CTRL  CROUCH",card.x+39*ui,card.y+481*ui,11*ui,PALE);
-                text(gfx.font,"ENTER / START     ESC / PAUSE     F11 / FULLSCREEN",card.x+39*ui,card.y+523*ui,9*ui,{130,152,163,255});
+                text(gfx.font,"ENTER / START   ESC / PAUSE   F5 / AI POLICY   F11 / FULLSCREEN",card.x+39*ui,card.y+523*ui,9*ui,{130,152,163,255});
             }
             if(debug)text(gfx.font,TextFormat("%d FPS | SHADOWS %s [F4] | M AUDIO",GetFPS(),gfx.shadows?"ON":"OFF"),15,sh-15,11,WHITE);
             EndDrawing();frames++;

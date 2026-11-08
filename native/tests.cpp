@@ -35,6 +35,13 @@ int main() {
     using namespace strike;
     using Test = std::pair<const char*, std::function<void()>>;
     const std::vector<Test> tests{
+        {"both versioned bot policies load and differ", [] {
+            auto folder=std::filesystem::path(__FILE__).parent_path()/"assets";
+            auto prior=tactics::Policy::load((folder/"bot-policy.txt").string());
+            auto after=tactics::Policy::load((folder/"bot-policy-after-100.txt").string());
+            check(prior.q!=after.q,"100-round policy did not change");
+            Game g;g.useBotPolicy(after);g.start();check(g.trainedBots,"candidate policy not activated");
+        }},
         {"shipped policy loads and drives autonomous decisions", [] {
             auto path=std::filesystem::path(__FILE__).parent_path()/"assets"/"bot-policy.txt";
             auto p=tactics::Policy::load(path.string());Game g;g.useBotPolicy(p);g.start();quiet(g);
