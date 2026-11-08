@@ -1,8 +1,9 @@
 #pragma once
+#include "bot_pose.hpp"
 // Original articulated patrol model. Geometry and animation are generated locally.
 struct BotRenderer {
     struct Ring {float y,rx,rz,z=0;};
-    struct Pose {strike::Vec2 previous{};float yaw=0,phase=0,speed=0,hit=0,death=0;int hp=100;bool initialized=false;};
+    struct Pose {strike::Vec2 previous{};float yaw=0,phase=0,speed=0,hit=0,death=0,deathDirection=1,deathHip=.94f;int hp=100;bool initialized=false;};
     std::array<Pose,6> poses{};
     Model torso{},limb{},head{},helmet{},boot{},pouch{};
     Texture2D cloth{};
@@ -50,14 +51,20 @@ struct BotRenderer {
         for(int i=0;i<6;i++){
             auto& p=poses[i];const auto& b=game.bots[i];
             if(!p.initialized||reset){p=Pose{};p.previous=b.pos;p.yaw=b.yaw;p.initialized=true;}
-            if(game.mode!=Mode::Playing)continue;
+            if(game.mode==Mode::Paused||game.mode==Mode::Ready)continue;
+            if(b.hp<=0&&p.hp>0){
+                auto forward=strike::viewDirection(b.yaw,0);
+                float dx=game.lastShot.origin.x-b.pos.x,dz=game.lastShot.origin.z-b.pos.z;
+                p.deathDirection=forward.x*dx+forward.z*dz>=0?1.f:-1.f;
+                p.deathHip=.94f-.55f*b.crouch;
+            }
             float travelled=strike::distance(p.previous,b.pos);float speed=dt>0?travelled/dt:0;
             p.previous=b.pos;p.speed+=(speed-p.speed)*std::min(1.f,dt*10);
             p.phase+=travelled/(b.speed>2.8f?1.5f:1.15f)*2*PI;
             float turn=std::remainder(b.yaw-p.yaw,2*PI);p.yaw+=turn*std::min(1.f,dt*8);
             p.hit=std::max(0.f,p.hit-dt*5);
             if(b.hp<p.hp&&b.hp>0)p.hit=1;
-            p.hp=b.hp;if(!b.alive())p.death=std::min(1.f,p.death+dt*1.1f);
+            p.hp=b.hp;if(!b.alive())p.death=std::min(1.f,p.death+dt*.85f);
         }
     }
     template<class G> void garment(G& g,Model& model,Vector3 pos,Vector3 size,Color color,Vector3 axis={0,1,0},float angle=0){
@@ -79,25 +86,34 @@ struct BotRenderer {
         float running=std::clamp((p.speed-2.f)/1.8f,0.f,1.f);
         float airborne=std::clamp(b.feet*3.f,0.f,1.f);
         float crouch=b.crouch;
+        auto fall=strike::collapsePose(p.death,p.deathHip,p.deathDirection,index);
+        float collapse=fall.legFold;
+        if(!b.alive()){motion*=1-collapse;running*=1-collapse;}
+        const float hipY=b.alive()?.94f-.55f*crouch:fall.hipHeight;
         float bounce=std::abs(std::sin(phase))*(.018f+.025f*running)*motion*(1-airborne);
-        float breathe=std::sin(elapsed*2.1f+index)*.004f;
+        float breathe=std::sin(elapsed*2.1f+index)*.004f*(1-collapse);
         float lean=std::sin(elapsed*.65f+index)*.025f*(1-motion);
         rlPushMatrix();rlTranslatef(b.pos.x,b.feet*(1-p.death)+p.death*.10f,b.pos.z);rlRotatef(p.yaw*RAD2DEG,0,1,0);
-        rlRotatef(p.death*88-p.hit*7,1,0,0);rlTranslatef(lean,bounce,0);
+        rlTranslatef((lean+std::sin(phase)*.012f*motion)*(1-collapse),bounce*(1-collapse),0);
         Color fabric{110,121,91,255},pants{148,143,113,255},armor{69,80,66,255},web{101,111,80,255},skin{178,143,110,255};
         // Feet travel through an alternating planted/swing cycle; knees bend forward.
         for(int side=-1;side<=1;side+=2){
             float q=phase+(side<0?PI:0),swing=std::sin(q),lift=std::max(0.f,std::cos(q))*(.10f+.12f*running)*motion*(1-airborne);
             Vector3 hip{side*.105f,.94f-.55f*crouch,0},knee{side*.105f,.49f-.15f*crouch-lift*.2f,-.045f-.25f*crouch-.18f*airborne-std::max(0.f,swing)*(.12f+.1f*running)*motion};
             Vector3 ankle{side*.11f,.10f+lift,swing*(.20f+.13f*running)*motion*(1-airborne)};
+            hip.y=hipY;
+            knee=Vector3Lerp(knee,{side*(.18f+.025f*(index%2)),.13f,-p.deathDirection*.38f},collapse);
+            ankle=Vector3Lerp(ankle,{side*.22f,.10f,-p.deathDirection*(.72f+(side<0?.07f:0))},collapse);
             segment(g,hip,knee,.106f,.107f,pants);segment(g,knee,ankle,.078f,.080f,pants);
-            g.sphere(knee,{.084f,.105f,.085f},armor);
-            g.box({knee.x,knee.y,knee.z-.072f},{.112f,.145f,.036f},{80,87,70,255});
-            g.mesh(boot,{ankle.x,lift,ankle.z},{.92f,.85f,.94f},{48,49,42,255});
+            g.sphere(knee,{.078f,.095f,.080f},armor);
+            g.box({knee.x,knee.y,knee.z-.072f},{.095f,.12f,.032f},{80,87,70,255});
+            g.mesh(boot,{ankle.x,ankle.y-.10f,ankle.z},{.92f,.85f,.94f},{48,49,42,255});
             for(int n=0;n<4;n++)g.box({ankle.x,.10f+lift+n*.018f,ankle.z-.095f},{.09f,.008f,.012f},{89,87,66,255});
-            g.box({side*.155f,.77f-.55f*crouch,.02f},{.065f,.18f,.13f},web);
+            g.box({side*.155f,hipY-.17f,.02f},{.065f,.18f,.13f},web);
         }
-        rlPushMatrix();rlTranslatef(0,-.55f*crouch,0);
+        rlPushMatrix();rlTranslatef(0,hipY,0);
+        rlRotatef(fall.torsoPitch-p.hit*4-running*5*(1-collapse),1,0,0);rlRotatef(fall.torsoRoll+std::sin(phase)*1.4f*motion*(1-collapse),0,0,1);
+        rlTranslatef(0,-.94f,0);
         garment(g,torso,{0,.92f,0},{1,1,1},fabric);
         // Shaped carrier front/back, straps, magazines, belt equipment and radio.
         g.mesh(torso,{0,.995f,-.055f},{1.05f,.76f,1.2f},armor);
@@ -118,6 +134,10 @@ struct BotRenderer {
         float recoil=b.shotFlash>0?.025f:0;
         Vector3 rightShoulder{.235f,1.43f,0},rightElbow{.29f,1.17f,-.11f},rightHand{.105f,1.29f,-.33f+recoil};
         Vector3 leftShoulder{-.235f,1.43f,0},leftElbow{-.29f,1.17f,-.19f},leftHand{-.035f,1.29f,-.55f+recoil};
+        rightElbow=Vector3Lerp(rightElbow,{.36f,1.24f,.02f*p.deathDirection},fall.armRelease);
+        leftElbow=Vector3Lerp(leftElbow,{-.38f,1.18f,.04f*p.deathDirection},fall.armRelease);
+        rightHand=Vector3Lerp(rightHand,{.42f,1.02f,-.06f*p.deathDirection},fall.armRelease);
+        leftHand=Vector3Lerp(leftHand,{-.40f,.99f,-.08f*p.deathDirection},fall.armRelease);
         for(int side:{-1,1}){
             Vector3 shoulder=side<0?leftShoulder:rightShoulder,elbow=side<0?leftElbow:rightElbow,hand=side<0?leftHand:rightHand;
             segment(g,shoulder,elbow,.082f,.080f,fabric);segment(g,elbow,hand,.066f,.064f,fabric);
@@ -128,7 +148,7 @@ struct BotRenderer {
         }
         // Anatomical head rather than a spherical doll face.
         g.link({0,1.45f,0},{0,1.58f,0},.055f,skin);
-        rlPushMatrix();rlTranslatef(0,breathe,0);rlRotatef(std::sin(elapsed*.9f+index)*2,0,1,0);
+        rlPushMatrix();rlTranslatef(0,breathe,0);rlRotatef(std::sin(elapsed*.9f+index)*2*(1-collapse),0,1,0);
         g.mesh(head,{0,1.53f,0},{1,1,1},skin);
         for(float side:{-1.f,1.f}){
             g.sphere({side*.105f,1.67f,.005f},{.019f,.035f,.022f},skin);
@@ -150,6 +170,8 @@ struct BotRenderer {
         }
         g.link({-.135f,1.68f,.005f},{-.075f,1.625f,-.115f},.005f,{35,44,39,255});
         rlPopMatrix();
+        // Weapon leaves the hands as the arms release, then settles beside the body.
+        if(p.death<.22f){
         // Original compact rifle with barrel, stock, magazine, sights and support grip.
         g.box({.07f,1.305f,-.38f+recoil},{.085f,.085f,.37f},{44,50,47,255});
         g.box({.07f,1.245f,-.29f+recoil},{.06f,.16f,.10f},{39,45,42,255},-1,8);
@@ -157,7 +179,17 @@ struct BotRenderer {
         g.box({.07f,1.315f,-.10f},{.07f,.10f,.17f},{51,58,49,255});
         for(int n=0;n<7;n++)g.box({.07f,1.358f,-.24f-n*.035f},{.07f,.012f,.014f},{81,88,76,255});
         if(b.shotFlash>0&&!g.shadowPass)g.sphere({.07f,1.32f,-.91f},{.045f,.045f,.10f},{255,220,134,255});
+        }
         rlPopMatrix();
+        if(p.death>=.22f){
+            float drop=strike::poseBlend(p.death,.22f,.7f);
+            rlPushMatrix();rlTranslatef(.38f,.075f+(1-drop)*.45f,-p.deathDirection*.25f);
+            rlRotatef(22+index*13,0,1,0);rlRotatef(90,0,0,1);
+            g.box({0,0,0},{.085f,.085f,.50f},{44,50,47,255});
+            g.link({0,0,-.25f},{0,0,-.58f},.016f,{29,35,33,255});
+            g.box({0,-.08f,.08f},{.06f,.16f,.10f},{39,45,42,255});
+            rlPopMatrix();
+        }
         rlPopMatrix();
     }
 };

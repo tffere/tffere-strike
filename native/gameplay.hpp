@@ -45,7 +45,7 @@ enum class Mode { Ready, Playing, Paused, Won, Lost };
 enum class EventType {
     Restarted, PauseChanged, PlayerShot, EmptyClick, ReloadStarted,
     ReloadCompleted, WeaponSwitched, ScopeChanged, BotShot,
-    PlayerHit, BotHit, BotKilled, Jumped, Won, Lost
+    PlayerFootstep, BotFootstep, Landed, PlayerHit, BotHit, BotKilled, Jumped, Won, Lost
 };
 struct Event {
     EventType type;
@@ -104,6 +104,8 @@ struct Player {
     Vec2 pos{0, 18};
     float y = EYE_HEIGHT, yaw = 0, pitch = 0, verticalVelocity = 0;
     int health = 100;
+    float crouch = 0;
+    float eyeHeight() const { return EYE_HEIGHT - .65f*crouch; }
 };
 enum class Awareness { Patrol, Investigate, Chase, Search };
 struct Noise { Vec2 position; float radius; };
@@ -114,6 +116,7 @@ struct Bot {
     float phase = 0, cooldown = 1, shotFlash = 0;
     float yaw = 0;
     float feet = 0, verticalVelocity = 0, crouch = 0, speed = 0;
+    float footstepDistance = 0;
     float actionCooldown = 2, crouchRemaining = 0;
     Awareness awareness = Awareness::Patrol;
     Vec2 interest{}, searchCenter{};
@@ -125,7 +128,7 @@ struct Bot {
 };
 struct Input {
     bool forward = false, backward = false, left = false, right = false;
-    bool sprint = false, jump = false, fire = false, reload = false;
+    bool sprint = false, crouch = false, jump = false, fire = false, reload = false;
     bool toggleScope = false, selectAR7 = false, selectAW9 = false;
     bool pause = false, restart = false, start = false;
     float lookX = 0, lookY = 0;
@@ -472,29 +475,38 @@ public:
             forward /= norm;
             side /= norm;
         }
-        const float speed = (input.sprint ? 6.f : 4.f) * dt;
+        const float feet=std::max(0.f,player.y-player.eyeHeight());
+        const bool grounded=feet<=.001f;
+        player.crouch+=std::clamp((input.crouch?1.f:0.f)-player.crouch,-dt*5,dt*5);
+        player.y=feet+player.eyeHeight();
+        const bool sprinting=input.sprint && player.crouch<.1f;
+        const float speed = (sprinting ? 6.f : 4.f-2.f*player.crouch) * dt;
         const Vec2 previousPlayer = player.pos;
-        const bool grounded = player.y <= EYE_HEIGHT + .001f;
         moveActor(player.pos,
             (-std::sin(player.yaw) * forward + std::cos(player.yaw) * side) * speed,
             (-std::cos(player.yaw) * forward - std::sin(player.yaw) * side) * speed,
-            obstacles, PLAYER_RADIUS, std::max(0.f, player.y - EYE_HEIGHT));
+            obstacles, PLAYER_RADIUS, std::max(0.f, player.y - player.eyeHeight()));
         if (grounded) {
             footstepDistance += distance(previousPlayer, player.pos);
-            const float stride = input.sprint ? 1.6f : 1.35f;
+            const float stride = sprinting ? 1.6f : 1.35f-.4f*player.crouch;
             if (footstepDistance >= stride) {
-                makeNoise(player.pos, input.sprint ? 15.f : 8.f);
+                const float loudness=sprinting?1.25f:1.f-.75f*player.crouch;
+                makeNoise(player.pos, sprinting ? 15.f : 8.f-5.5f*player.crouch);
+                events.push_back({EventType::PlayerFootstep,-1,selectedWeapon,player.pos,loudness});
                 footstepDistance = std::fmod(footstepDistance, stride);
             }
         }
-        if (input.jump && player.y <= EYE_HEIGHT + .001f) {
+        if (input.jump && grounded && player.crouch<.1f) {
             player.verticalVelocity = 6;
             events.push_back({EventType::Jumped});
         }
         player.verticalVelocity -= 16 * dt;
-        player.y = std::max(EYE_HEIGHT, player.y + player.verticalVelocity * dt);
-        if (player.y <= EYE_HEIGHT) {
-            if (!grounded) makeNoise(player.pos, 12.f);
+        player.y = std::max(player.eyeHeight(), player.y + player.verticalVelocity * dt);
+        if (player.y <= player.eyeHeight()) {
+            if (!grounded) {
+                makeNoise(player.pos, 12.f);
+                events.push_back({EventType::Landed,-1,selectedWeapon,player.pos,1.35f});
+            }
             player.verticalVelocity = 0;
         }
         if (input.fire) shoot();
@@ -634,6 +646,15 @@ private:
             }
             bot.speed = dt > 0 ? distance(before, bot.pos) / dt : 0;
             bot.phase += distance(before, bot.pos) * 7;
+            if(bot.feet<=.001f) {
+                bot.footstepDistance+=distance(before,bot.pos);
+                const float stride=bot.speed>2.8f?1.45f:1.05f;
+                if(bot.footstepDistance>=stride) {
+                    events.push_back({EventType::BotFootstep,static_cast<int>(i),WeaponId::AR7,bot.pos,
+                                      (bot.speed>2.8f?1.1f:.7f)*(1-.7f*bot.crouch)});
+                    bot.footstepDistance=std::fmod(bot.footstepDistance,stride);
+                }
+            }
             bot.cooldown -= dt;
             // Check the final position and posture, both eyes and muzzle. The
             // muzzle must also be reachable from the body (no barrel through walls).

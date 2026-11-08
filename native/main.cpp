@@ -260,10 +260,12 @@ struct Graphics{
 
 struct Audio{
     bool ready=false,muted=false;std::array<Sound,7> sounds{};
-    Audio(bool enabled){
+    std::array<Sound,5> footsteps{};std::mt19937 stepRandom{1551};int previousStep=-1;
+    Audio(bool enabled,const std::string& assets){
         if(!enabled)return;
         InitAudioDevice();ready=IsAudioDeviceReady();if(!ready)return;
         for(int id=0;id<7;id++){
+            if(id==4)continue;
             float duration=id==1?.85f:id==2?.7f:.16f;
             int count=int(44100*duration);std::vector<short> samples(count);
             std::mt19937 rng(71+id);std::uniform_real_distribution<float> noise(-1,1);float low=0;
@@ -273,16 +275,23 @@ struct Audio{
                     if(id==1&&t>.18f)value+=noise(rng)*std::exp(-(t-.18f)*12)*.10f;
                 }else if(id==2){float click=std::fmod(t,.22f);value=(noise(rng)*.3f+std::sin(t*1400)*.12f)*std::exp(-click*95);}
                 else if(id==3)value=std::sin(t*6500)*std::exp(-t*38)*.22f;
-                else if(id==4)value=(low+noise(rng)*.12f)*std::exp(-t*40)*.4f;
                 else if(id==5)value=std::sin(t*420)*std::exp(-t*35)*.25f;
                 else value=noise(rng)*std::exp(-t*100)*.18f;
                 samples[i]=short(std::clamp(value,-.95f,.95f)*28000);
             }
             Wave wave{unsigned(count),44100,16,1,samples.data()};sounds[id]=LoadSoundFromWave(wave);SetSoundVolume(sounds[id],id==1?.75f:.5f);
         }
+        for(int i=0;i<5;i++)footsteps[i]=LoadSound((assets+"/footsteps/footstep_concrete_"+TextFormat("%03d",i)+".ogg").c_str());
+    }
+    void footstep(float volume,float pan=.5f){
+        if(!ready||muted||volume<.015f)return;
+        int choice=int(stepRandom()%5);if(choice==previousStep)choice=(choice+1)%5;
+        previousStep=choice;auto sample=footsteps[choice];if(!IsSoundValid(sample))return;
+        SetSoundPitch(sample,.96f+float(stepRandom()%9)*.01f);
+        SetSoundVolume(sample,std::clamp(volume*.55f,0.f,.9f));SetSoundPan(sample,pan);PlaySound(sample);
     }
     void play(int id){if(ready&&!muted)PlaySound(sounds[id]);}
-    ~Audio(){if(ready){for(auto s:sounds)UnloadSound(s);CloseAudioDevice();}}
+    ~Audio(){if(ready){for(auto s:sounds)if(IsSoundValid(s))UnloadSound(s);for(auto s:footsteps)if(IsSoundValid(s))UnloadSound(s);CloseAudioDevice();}}
 };
 
 static void text(Font f,const char* str,float x,float y,float size,Color c,float spacing=1){DrawTextEx(f,str,{x,y},size,spacing,c);}
@@ -295,14 +304,14 @@ int main(int argc,char** argv){
     for(int i=1;i<argc;i++){if(!std::strcmp(argv[i],"--smoke-test"))smoke=true;if(!std::strcmp(argv[i],"--capture"))capture=true;if(!std::strcmp(argv[i],"--capture-nw")){capture=true;sectorCapture=4;}if(!std::strcmp(argv[i],"--capture-ne")){capture=true;sectorCapture=5;}if(!std::strcmp(argv[i],"--capture-sw")){capture=true;sectorCapture=6;}if(!std::strcmp(argv[i],"--capture-se")){capture=true;sectorCapture=7;}if(!std::strcmp(argv[i],"--capture-long")){capture=true;sectorCapture=1;}if(!std::strcmp(argv[i],"--capture-west")){capture=true;sectorCapture=2;}if(!std::strcmp(argv[i],"--capture-court")){capture=true;sectorCapture=3;}if(!std::strcmp(argv[i],"--bot-capture")){botCapture=true;capture=true;}if(!std::strcmp(argv[i],"--map-capture")){mapCapture=true;capture=true;}}
     std::filesystem::path base=std::filesystem::absolute(argv[0]).parent_path();
     SetTraceLogLevel(LOG_WARNING);SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT|FLAG_VSYNC_HINT);
-    InitWindow(1280,720,"Tffere Strike v1.3 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
+    InitWindow(1280,720,"Tffere Strike v1.4 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
     int exitCode=0;
     try{
         std::filesystem::path assets=base/"assets";
         if(!std::filesystem::exists(assets/"materials.png"))assets=std::filesystem::path(GetWorkingDirectory())/"native/assets";
         Graphics gfx(assets.string());strike::Game game(true);buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
-        for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--no-shadows"))gfx.shadows=false;Audio audio(!smoke);
-        float recoil=0,scope=0,walk=0,stepTimer=0,switchAnim=0,hitFade=0;
+        for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--no-shadows"))gfx.shadows=false;Audio audio(!smoke,assets.string());
+        float recoil=0,scope=0,walk=0,switchAnim=0,hitFade=0;
         WeaponId previous=WeaponId::AR7;int frames=0;bool debug=false,blockFire=false;std::vector<Tracer> tracers;
         std::vector<strike::Impact> visibleImpacts;unsigned seenImpact=0;
         if(smoke||capture)game.start();
@@ -325,7 +334,7 @@ int main(int argc,char** argv){
             strike::Input input;
             if(game.mode==Mode::Playing){
                 input.forward=IsKeyDown(KEY_W);input.backward=IsKeyDown(KEY_S);input.left=IsKeyDown(KEY_A);input.right=IsKeyDown(KEY_D);
-                input.sprint=IsKeyDown(KEY_LEFT_SHIFT);input.jump=IsKeyPressed(KEY_SPACE);input.fire=IsMouseButtonDown(MOUSE_BUTTON_LEFT)&&!blockFire;
+                input.crouch=IsKeyDown(KEY_LEFT_CONTROL)||IsKeyDown(KEY_RIGHT_CONTROL);input.sprint=IsKeyDown(KEY_LEFT_SHIFT);input.jump=IsKeyPressed(KEY_SPACE);input.fire=IsMouseButtonDown(MOUSE_BUTTON_LEFT)&&!blockFire;
                 if(!IsMouseButtonDown(MOUSE_BUTTON_LEFT))blockFire=false;
                 input.reload=IsKeyPressed(KEY_R);input.toggleScope=IsMouseButtonPressed(MOUSE_BUTTON_RIGHT);
                 input.selectAR7=IsKeyPressed(KEY_ONE);input.selectAW9=IsKeyPressed(KEY_TWO);
@@ -364,13 +373,25 @@ int main(int argc,char** argv){
             if(game.mode==Mode::Playing){
                 bool moving=input.forward||input.backward||input.left||input.right;
                 walk+=dt*(moving?(input.sprint?12:8):1.2f);
-                if(moving){stepTimer-=dt;if(stepTimer<=0){audio.play(4);stepTimer=input.sprint?.27f:.39f;}}
+
                 scope+=(float(game.scoped)-scope)*std::min(1.f,dt*14);
                 recoil=std::max(0.f,recoil-dt*10);switchAnim=std::max(0.f,switchAnim-dt*4);
             }
             for(const auto& e:game.events){
                 using E=strike::EventType;
                 if(e.type==E::PlayerShot){audio.play(e.weapon==WeaponId::AW9?1:0);recoil=1;tracers.push_back({V(game.lastShot.origin),V(game.lastShot.point),.055f});}
+                if(e.type==E::PlayerFootstep || e.type==E::Landed)audio.footstep(e.value);
+                if(e.type==E::BotFootstep) {
+                    const float d=strike::distance(e.position,game.player.pos);
+                    if(d<18) {
+                        const bool blocked=!strike::lineOfSight({e.position.x,.8f,e.position.z},
+                            {game.player.pos.x,game.player.y,game.player.pos.z},game.obstacles);
+                        const float side=(e.position.x-game.player.pos.x)*std::cos(game.player.yaw)
+                                        -(e.position.z-game.player.pos.z)*std::sin(game.player.yaw);
+                        audio.footstep(e.value*std::max(0.f,1-d/18)*(blocked?.3f:1.f),
+                                       std::clamp(.5f+side/24,.1f,.9f));
+                    }
+                }
                 if(e.type==E::ReloadStarted)audio.play(2);
                 if(e.type==E::BotHit){audio.play(3);hitFade=1;}
                 if(e.type==E::BotKilled)audio.play(5);
@@ -498,7 +519,7 @@ int main(int argc,char** argv){
                 text(gfx.font,action,playButton.x+24*ui,playButton.y+19*ui,13*ui,INK,2*ui);
                 text(gfx.font,"WASD   MOVE       MOUSE   LOOK / FIRE",card.x+39*ui,card.y+425*ui,11*ui,PALE);
                 text(gfx.font,"1 / 2  WEAPONS    RIGHT CLICK   SCOPE",card.x+39*ui,card.y+453*ui,11*ui,PALE);
-                text(gfx.font,"R  RELOAD    SPACE  JUMP    SHIFT  SPRINT",card.x+39*ui,card.y+481*ui,11*ui,PALE);
+                text(gfx.font,"R  RELOAD    SPACE  JUMP    SHIFT  SPRINT   CTRL  CROUCH",card.x+39*ui,card.y+481*ui,11*ui,PALE);
                 text(gfx.font,"ENTER / START     ESC / PAUSE     F11 / FULLSCREEN",card.x+39*ui,card.y+523*ui,9*ui,{130,152,163,255});
             }
             if(debug)text(gfx.font,TextFormat("%d FPS | SHADOWS %s [F4] | M AUDIO",GetFPS(),gfx.shadows?"ON":"OFF"),15,sh-15,11,WHITE);

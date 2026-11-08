@@ -1,4 +1,5 @@
 #include "gameplay.hpp"
+#include "bot_pose.hpp"
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -33,6 +34,58 @@ int main() {
     using namespace strike;
     using Test = std::pair<const char*, std::function<void()>>;
     const std::vector<Test> tests{
+        {"player crouch lowers eyes without moving feet, slows movement and disables sprint", [] {
+            Game g;g.start();quiet(g);g.obstacles.clear();
+            Input in;in.crouch=in.sprint=in.forward=true;
+            Vec2 start=g.player.pos;g.step(.25f,in);
+            check(near(g.player.crouch,1)&&near(g.player.y,1.05f),"crouch eye height incorrect");
+            check(near(g.player.y-g.player.eyeHeight(),0),"crouching moved feet");
+            check(near(distance(start,g.player.pos),.5f),"crouch did not slow/disable sprint");
+            g.step(.1f);
+            check(g.player.crouch>0&&g.player.crouch<1,"standing snapped instead of blending");
+            g.step(.1f);check(near(g.player.y,EYE_HEIGHT),"standing left camera below floor");
+        }},
+        {"crouching avoids low-cover sight and produces quieter footsteps", [] {
+            Bot b;b.pos={0,0};b.yaw=0;
+            std::vector<Obstacle> cover{{0,-4.5f,4,1,1.3f}};
+            check(botSees(b,{0,1.7f,-6},cover),"standing player should be visible");
+            check(!botSees(b,{0,1.05f,-6},cover),"crouching player seen through low cover");
+            Game g;g.start();quiet(g);g.obstacles.clear();Input in;in.crouch=in.forward=true;
+            bool step=false;
+            for(int i=0;i<20;i++){
+                g.step(.05f,in);
+                for(auto e:g.events)if(e.type==EventType::PlayerFootstep){step=true;check(e.value<.5f,"crouch footsteps too loud");}
+            }
+            check(step,"crouch movement never produced footsteps");
+        }},
+        {"footstep sounds follow grounded travel, not held movement keys", [] {
+            Game g;g.start();quiet(g);g.player.pos={0,5};g.obstacles={{0,3.9f,4,1,4}};
+            Input in;in.forward=true;
+            for(int i=0;i<20;i++){g.step(.05f,in);check(!hasEvent(g,EventType::PlayerFootstep),"blocked movement made step sounds");}
+            g.obstacles.clear();g.player.y=EYE_HEIGHT+3;g.player.verticalVelocity=0;
+            for(int i=0;i<5;i++){g.step(.05f,in);check(!hasEvent(g,EventType::PlayerFootstep),"airborne movement made step sounds");}
+        }},
+        {"crouch during jump preserves landing height and pause freezes stance", [] {
+            Game g;g.start();quiet(g);g.obstacles.clear();Input in;in.jump=true;g.step(.05f,in);
+            check(g.player.y>EYE_HEIGHT,"initial jump failed");in={};in.crouch=true;
+            for(int i=0;i<40;i++)g.step(.025f,in);
+            check(near(g.player.y,g.player.eyeHeight()),"crouch jump failed to land");
+            g.togglePause();float y=g.player.y,c=g.player.crouch;g.step(.25f);
+            check(near(g.player.y,y)&&near(g.player.crouch,c),"pause changed crouch pose");
+            g.restart();check(near(g.player.crouch,0)&&near(g.player.y,EYE_HEIGHT),"restart retained crouch");
+        }},
+        {"collapse bends knees before impact and settles in varied grounded poses", [] {
+            auto start=collapsePose(0,.94f,1,0),early=collapsePose(.15f,.94f,1,0),end=collapsePose(1,.94f,1,0);
+            check(near(start.hipHeight,.94f)&&near(start.torsoPitch,0),"collapse starts displaced");
+            check(early.armRelease>0&&early.hipHeight<start.hipHeight,"collapse remains rigid");
+            check(near(end.hipHeight,.24f)&&end.legFold>.99f&&end.armRelease>.99f,"body never settles");
+            auto reverse=collapsePose(1,.39f,-1,1);
+            check(reverse.torsoPitch<0&&end.torsoPitch>0&&reverse.torsoRoll!=end.torsoRoll,"death variations identical");
+            for(int i=0;i<=100;i++){
+                auto pose=collapsePose(i/100.f,.39f,-1,1);
+                check(std::isfinite(pose.hipHeight)&&pose.hipHeight>=.22f,"collapse clips pelvis below floor");
+            }
+        }},
         {"silent hidden player positions cannot influence patrols", [] {
             Game a,b; a.start();b.start();quiet(a);quiet(b);
             a.obstacles=b.obstacles={{0,5,66,1,12}};

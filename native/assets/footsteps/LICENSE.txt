@@ -1,0 +1,8 @@
+Footstep Concrete 000–004 from Impact Sounds 1.0 by Kenney.
+Publisher and license: https://kenney.nl/assets/impact-sounds
+Creative Commons Zero (CC0 1.0): https://creativecommons.org/publicdomain/zero/1.0/
+
+Retrieved from an unmodified public mirror at pinned commit:
+https://github.com/iree-gd/iree.gd/tree/9db7d7069a9ad75c77e9b5657d1ae5bdf615a6bc/sample/assets/audio/impact
+The publisher download returned HTTP 403 in this environment. Original OGG
+files are included unchanged; SHA256SUMS.json records their exact hashes.
