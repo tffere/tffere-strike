@@ -107,7 +107,7 @@ struct Player {
 };
 enum class Awareness { Patrol, Investigate, Chase, Search };
 struct Noise { Vec2 position; float radius; };
-struct Impact { Vec3 point, normal; };
+struct Impact { Vec3 point, normal, origin, direction; };
 struct Bot {
     Vec2 pos{}, spawn{};
     int hp = 100;
@@ -310,6 +310,7 @@ public:
     std::vector<Impact> impacts;
     std::vector<Noise> noises; // Discrete stimuli consumed once by all bots.
     float footstepDistance = 0;
+    unsigned impactSerial = 0;
 
     void makeNoise(Vec2 position, float radius) { noises.push_back({position, radius}); }
     void leaveImpact(Vec3 origin, Vec3 direction, float hitDistance) {
@@ -335,7 +336,8 @@ public:
         }
         if(nearest > .01f) return;
         if(impacts.size() >= 256) impacts.erase(impacts.begin());
-        impacts.push_back({point,normal});
+        impacts.push_back({point,normal,origin,direction});
+        ++impactSerial;
     }
 
     bool desertMap = false;
@@ -513,7 +515,7 @@ private:
         scoped = false;
         lastShot = ShotResult{};
         events.clear();
-        impacts.clear(); noises.clear(); footstepDistance=0;
+        impacts.clear(); noises.clear(); footstepDistance=0; impactSerial=0;
         random_.seed(711);
         for (std::size_t i = 0; i < weapons.size(); ++i) weapons[i].reset(WEAPON_SPECS[i]);
         constexpr std::array<Vec2, 6> starts{{{0, 1}, {-3, -6}, {8, 10}, {4, -15}, {-16, 16}, {17, -4}}};

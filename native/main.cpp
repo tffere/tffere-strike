@@ -304,6 +304,7 @@ int main(int argc,char** argv){
         for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--no-shadows"))gfx.shadows=false;Audio audio(!smoke);
         float recoil=0,scope=0,walk=0,stepTimer=0,switchAnim=0,hitFade=0;
         WeaponId previous=WeaponId::AR7;int frames=0;bool debug=false,blockFire=false;std::vector<Tracer> tracers;
+        std::vector<strike::Impact> visibleImpacts;unsigned seenImpact=0;
         if(smoke||capture)game.start();
         if(sectorCapture==1)game.player.pos={25,21};
         if(sectorCapture==2)game.player.pos={-25,17};
@@ -337,6 +338,26 @@ int main(int argc,char** argv){
             if(capture)input={};
             if(smoke){input={};if(frames<35)input.forward=true;if(frames==40)input.selectAW9=true;if(frames==48)input.toggleScope=true;if(frames==80)input.fire=true;}
             Mode oldMode=game.mode;game.step(dt,input);botArt.update(game,dt);
+            if(game.impactSerial<seenImpact){visibleImpacts.clear();seenImpact=0;}
+            if(game.impactSerial>seenImpact && !game.impacts.empty()) {
+                auto mark=game.impacts.back();
+                float nearest=Vector3Distance(V(mark.origin),V(mark.point))+.02f;
+                // Project once onto the visible facade/door/trim, rather than
+                // leaving the decal hidden inside decorative surface geometry.
+                Ray ray{V(mark.origin),V(mark.direction)};
+                for(const auto& prop:gfx.props) {
+                    if(prop.shape!=0 || std::abs(prop.angle)>.001f)continue;
+                    auto half=Vector3Scale(prop.scale,.5f);
+                    BoundingBox bounds{Vector3Subtract(prop.pos,half),Vector3Add(prop.pos,half)};
+                    auto hit=GetRayCollisionBox(ray,bounds);
+                    if(hit.hit && hit.distance>0 && hit.distance<nearest) {
+                        nearest=hit.distance;mark.point={hit.point.x,hit.point.y,hit.point.z};
+                        mark.normal={hit.normal.x,hit.normal.y,hit.normal.z};
+                    }
+                }
+                if(visibleImpacts.size()>=256)visibleImpacts.erase(visibleImpacts.begin());
+                visibleImpacts.push_back(mark);seenImpact=game.impactSerial;
+            }
             if(game.mode==Mode::Playing&&oldMode!=Mode::Playing&&!smoke){DisableCursor();blockFire=true;}
             if(game.mode!=Mode::Playing&&oldMode==Mode::Playing)EnableCursor();
             if(game.selectedWeapon!=previous){switchAnim=1;previous=game.selectedWeapon;}
@@ -382,7 +403,7 @@ int main(int argc,char** argv){
             BeginMode3D(camera);gfx.uniforms(camera.position,eye,game.muzzleFlash>0?1.2f:0);
             float fogDensity=mapCapture?.001f:.006f;SetShaderValue(gfx.lit,gfx.locFog,&fogDensity,SHADER_UNIFORM_FLOAT);
             gfx.world();for(int i=0;i<6;i++)botArt.draw(gfx,game.bots[i],i,game.elapsed);
-            for(const auto& mark:game.impacts) {
+            for(const auto& mark:visibleImpacts) {
                 Vector3 n=V(mark.normal),center=Vector3Add(V(mark.point),Vector3Scale(n,.008f));
                 Vector3 reference=std::abs(n.y)>.9f?Vector3{1,0,0}:Vector3{0,1,0};
                 Vector3 u=Vector3Normalize(Vector3CrossProduct(reference,n));
