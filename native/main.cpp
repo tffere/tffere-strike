@@ -304,12 +304,12 @@ int main(int argc,char** argv){
     for(int i=1;i<argc;i++){if(!std::strcmp(argv[i],"--smoke-test"))smoke=true;if(!std::strcmp(argv[i],"--capture"))capture=true;if(!std::strcmp(argv[i],"--capture-nw")){capture=true;sectorCapture=4;}if(!std::strcmp(argv[i],"--capture-ne")){capture=true;sectorCapture=5;}if(!std::strcmp(argv[i],"--capture-sw")){capture=true;sectorCapture=6;}if(!std::strcmp(argv[i],"--capture-se")){capture=true;sectorCapture=7;}if(!std::strcmp(argv[i],"--capture-long")){capture=true;sectorCapture=1;}if(!std::strcmp(argv[i],"--capture-west")){capture=true;sectorCapture=2;}if(!std::strcmp(argv[i],"--capture-court")){capture=true;sectorCapture=3;}if(!std::strcmp(argv[i],"--bot-capture")){botCapture=true;capture=true;}if(!std::strcmp(argv[i],"--map-capture")){mapCapture=true;capture=true;}}
     std::filesystem::path base=std::filesystem::absolute(argv[0]).parent_path();
     SetTraceLogLevel(LOG_WARNING);SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT|FLAG_VSYNC_HINT);
-    InitWindow(1280,720,"Tffere Strike v1.4 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
+    InitWindow(1280,720,"Tffere Strike v1.5 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
     int exitCode=0;
     try{
         std::filesystem::path assets=base/"assets";
         if(!std::filesystem::exists(assets/"materials.png"))assets=std::filesystem::path(GetWorkingDirectory())/"native/assets";
-        Graphics gfx(assets.string());strike::Game game(true);buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
+        Graphics gfx(assets.string());strike::Game game(true);game.useBotPolicy(strike::tactics::Policy::load((assets/"bot-policy.txt").string()));buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
         for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--no-shadows"))gfx.shadows=false;Audio audio(!smoke,assets.string());
         float recoil=0,scope=0,walk=0,switchAnim=0,hitFade=0;
         WeaponId previous=WeaponId::AR7;int frames=0;bool debug=false,blockFire=false;std::vector<Tracer> tracers;
@@ -399,7 +399,7 @@ int main(int argc,char** argv){
                 if(e.type==E::BotKilled)audio.play(5);
                 if(e.type==E::EmptyClick)audio.play(6);
                 if(e.type==E::BotShot){
-                    audio.play(6);const auto muzzle=strike::botMuzzle(game.bots[e.bot]);
+                    audio.play(e.weapon==WeaponId::AW9?1:6);const auto muzzle=strike::botMuzzle(game.bots[e.bot]);
                     tracers.push_back({{muzzle.x,muzzle.y,muzzle.z},{game.player.pos.x,game.player.y,game.player.pos.z},.04f});
                 }
             }

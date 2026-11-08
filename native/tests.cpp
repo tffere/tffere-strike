@@ -34,6 +34,45 @@ int main() {
     using namespace strike;
     using Test = std::pair<const char*, std::function<void()>>;
     const std::vector<Test> tests{
+        {"trained policy switches weapons with delay and tracks sniper ammunition", [] {
+            Game g;g.start();quiet(g);g.obstacles.clear();g.player.pos={0,-8};
+            auto& b=g.bots[0];b=Bot{};b.pos={0,0};b.cooldown=0;
+            tactics::Policy p;for(auto& row:p.q)row[tactics::Sniper]=1;g.useBotPolicy(p);
+            g.step(.05f);check(b.selected==WeaponId::AW9,"policy did not select sniper");
+            check(g.player.health==100&&b.guns[1].ammo==5,"switch fired early");
+            for(int i=0;i<8;i++)g.step(.05f);
+            check(b.guns[1].ammo==4&&g.player.health==69,"sniper did not obey ammo/damage");
+            check(b.guns[0].ammo==30,"switch destroyed rifle ammunition");
+        }},
+        {"trained reload consumes reserve and policy survives restart", [] {
+            Game g;g.start();quiet(g);g.obstacles.clear();g.player.pos={0,-8};
+            auto& b=g.bots[0];b=Bot{};b.selected=WeaponId::AW9;b.guns[1].ammo=0;
+            tactics::Policy p;for(auto& row:p.q)row[tactics::Reload]=1;g.useBotPolicy(p);
+            for(int i=0;i<60;i++)g.step(.05f);
+            check(b.guns[1].ammo==5&&b.guns[1].reserve==15,"trained reload failed");
+            g.restart();check(g.trainedBots&&g.bots[0].guns[1].ammo==5,"restart lost policy/reset weapon state");
+        }},
+        {"trained hidden-player navigation uses evidence, not live coordinates", [] {
+            Game a,b;a.start();b.start();quiet(a);quiet(b);
+            tactics::Policy p;for(auto& row:p.q)row[tactics::Hide]=1;a.useBotPolicy(p);b.useBotPolicy(p);
+            a.obstacles=b.obstacles={{0,5,66,1,10},{3,-2,2,3,3}};
+            for(Game* g:{&a,&b}){
+                g->bots[0]=Bot{};g->bots[0].memory=6;g->bots[0].searchCenter={0,10};
+                g->bots[0].awareness=Awareness::Investigate;g->bots[0].interest={0,10};
+            }
+            a.player.pos={-20,20};b.player.pos={20,20};
+            for(int i=0;i<30;i++){a.step(.05f);b.step(.05f);}
+            check(distance(a.bots[0].pos,b.bots[0].pos)<.001f,"trained hide leaked target position");
+            check(!circleBlocked(a.bots[0].pos,.35f,a.obstacles),"trained navigation entered cover");
+        }},
+        {"trained firing is blocked by walls and empty magazines", [] {
+            Game g;g.start();quiet(g);g.player.pos={0,-8};g.obstacles={{0,-4,4,1,4}};
+            auto& b=g.bots[0];b=Bot{};b.cooldown=0;
+            tactics::Policy p;for(auto& row:p.q)row[tactics::Shoot]=1;g.useBotPolicy(p);
+            g.step(.1f);check(g.player.health==100&&!hasEvent(g,EventType::BotShot),"trained shot through wall");
+            g.obstacles.clear();b.guns[0].ammo=0;b.cooldown=0;b.decisionRemaining=0;
+            g.step(.1f);check(g.player.health==100&&!hasEvent(g,EventType::BotShot),"empty trained gun fired");
+        }},
         {"player crouch lowers eyes without moving feet, slows movement and disables sprint", [] {
             Game g;g.start();quiet(g);g.obstacles.clear();
             Input in;in.crouch=in.sprint=in.forward=true;

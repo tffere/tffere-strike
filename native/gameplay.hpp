@@ -25,6 +25,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "tactical_policy.hpp"
 
 namespace strike {
 
@@ -122,6 +123,11 @@ struct Bot {
     Vec2 interest{}, searchCenter{};
     float memory = 0, searchRemaining = 0, patrolRemaining = 0;
     unsigned patrolStep = 0, searchStep = 0;
+    int tacticalAction=tactics::Search, forcedAction=-1;
+    float decisionRemaining=0, switchRemaining=0;
+    WeaponId selected=WeaponId::AR7;
+    std::array<WeaponState,2> guns{};
+    Bot(){for(int w=0;w<2;w++)guns[w].reset(WEAPON_SPECS[w]);}
     Vec2 navigationTarget{};
     float navigationCooldown = 0;
     bool alive() const { return hp > 0; }
@@ -268,8 +274,9 @@ inline float botHeadBase(const Bot& bot) { return bot.feet + 1.55f - .55f * bot.
 inline Vec3 botEye(const Bot& bot) { return {bot.pos.x, bot.feet + 1.7f - .55f * bot.crouch, bot.pos.z}; }
 inline Vec3 botMuzzle(const Bot& bot) {
     const auto forward = viewDirection(bot.yaw, 0);
-    return {bot.pos.x + forward.x * .87f, bot.feet + 1.32f - .55f * bot.crouch,
-            bot.pos.z + forward.z * .87f};
+    const float reach=.87f;
+    return {bot.pos.x + forward.x * reach, bot.feet + 1.32f - .55f * bot.crouch,
+            bot.pos.z + forward.z * reach};
 }
 inline bool botSees(const Bot& bot, Vec3 target, const std::vector<Obstacle>& obstacles) {
     const auto eye = botEye(bot);
@@ -343,6 +350,35 @@ public:
         ++impactSerial;
     }
 
+    bool trainedBots=false;
+    tactics::Policy botPolicy{};
+    void useBotPolicy(const tactics::Policy& policy) { botPolicy=policy;trainedBots=true; }
+    tactics::Observation botObservation(std::size_t index) const {
+        const auto& b=bots.at(index);
+        const Vec3 target{player.pos.x,player.y,player.pos.z};
+        const bool seen=botSees(b,target,obstacles);
+        const bool known=seen||b.memory>0;
+        const Vec2 evidence=seen?player.pos:b.searchCenter;
+        const float range=known?distance(b.pos,evidence):40;
+        const auto& gun=b.guns[static_cast<std::size_t>(b.selected)];
+        const bool covered=known&&!lineOfSight(botEye(b),{evidence.x,EYE_HEIGHT,evidence.z},obstacles);
+        return {seen,known,covered,b.hp<=40,gun.ammo<=int(gun.spec.capacity*.2f),
+                range<9?0:range<18?1:2,int(b.selected)};
+    }
+    Vec2 botCoverGoal(const Bot& bot) const {
+        Vec2 best=bot.pos;float cost=std::numeric_limits<float>::infinity();
+        for(const auto& box:obstacles){
+            const std::array<Vec2,4> candidates{{{box.x-box.w/2-.8f,box.z},{box.x+box.w/2+.8f,box.z},
+                {box.x,box.z-box.d/2-.8f},{box.x,box.z+box.d/2+.8f}}};
+            for(auto p:candidates){
+                if(circleBlocked(p,.36f,obstacles)||lineOfSight({p.x,1.2f,p.z},
+                    {bot.searchCenter.x,EYE_HEIGHT,bot.searchCenter.z},obstacles))continue;
+                const float d=distance(bot.pos,p);
+                if(d<cost){cost=d;best=p;}
+            }
+        }
+        return best;
+    }
     bool desertMap = false;
     explicit Game(bool desert=false):desertMap(desert) {
         if(desertMap)obstacles=desertObstacles();
@@ -537,6 +573,7 @@ private:
             bots[i].yaw = static_cast<float>(i) * 2.39996f;
             bots[i].interest = bots[i].spawn;
             bots[i].actionCooldown = 1.5f + static_cast<float>(i) * .55f;
+            for(int w=0;w<2;w++)bots[i].guns[w].reset(WEAPON_SPECS[w]);
             bots[i].phase = static_cast<float>(i);
             bots[i].cooldown = 1 + static_cast<float>(i) * .35f;
         }
@@ -623,7 +660,42 @@ private:
             bot.feet = std::max(0.f, bot.feet + bot.verticalVelocity * dt);
             if (bot.feet <= 0) bot.verticalVelocity = 0;
             bot.navigationCooldown -= dt;
+            bot.switchRemaining=std::max(0.f,bot.switchRemaining-dt);
+            for(auto& gun:bot.guns)gun.update(dt);
             Vec2 goal = bot.interest;
+            bool advance=true,wantsFire=true;
+            if(trainedBots){
+                const auto observation=botObservation(i);
+                bot.decisionRemaining-=dt;
+                if(bot.decisionRemaining<=.0001f){
+                    bot.tacticalAction=bot.forcedAction>=0?bot.forcedAction:
+                        observation.known?botPolicy.greedy(observation):tactics::Search;
+                    bot.decisionRemaining=.25f;
+                }
+                const int action=bot.tacticalAction;
+                wantsFire=action==tactics::Shoot||action==tactics::Rifle||action==tactics::Sniper;
+                advance=action==tactics::Chase||action==tactics::Hide||action==tactics::Left||
+                        action==tactics::Right||action==tactics::Search;
+                if(action==tactics::Rifle||action==tactics::Sniper){
+                    const auto weapon=action==tactics::Sniper?WeaponId::AW9:WeaponId::AR7;
+                    if(weapon!=bot.selected){bot.selected=weapon;bot.switchRemaining=.35f;}
+                }
+                if(action==tactics::Reload)bot.guns[static_cast<std::size_t>(bot.selected)].reload();
+                if(observation.known){
+                    if(action==tactics::Hide)goal=botCoverGoal(bot);
+                    else if(action==tactics::Left||action==tactics::Right){
+                        const float dx=bot.searchCenter.x-bot.pos.x,dz=bot.searchCenter.z-bot.pos.z;
+                        const float d=std::max(.01f,std::hypot(dx,dz)),side=action==tactics::Left?-1.f:1.f;
+                        goal={std::clamp(bot.pos.x+side*dz/d*5,-30.f,30.f),std::clamp(bot.pos.z-side*dx/d*5,-30.f,30.f)};
+                    }else if(action==tactics::Chase)goal=bot.searchCenter;
+                }
+                // An attack command cannot fire at an occluded target. Move
+                // toward remembered evidence to reacquire instead of freezing.
+                if(observation.known&&!observation.visible&&wantsFire){
+                    advance=true;wantsFire=false;goal=bot.searchCenter;
+                }
+                if(!observation.known){advance=true;wantsFire=false;}
+            }
             const bool routeClear=lineOfSight({bot.pos.x,.35f,bot.pos.z},
                                               {goal.x,.35f,goal.z},obstacles);
             if (!routeClear) {
@@ -634,11 +706,12 @@ private:
                 goal = bot.navigationTarget;
             } else bot.navigationCooldown = 0;
             const float gx = goal.x - bot.pos.x, gz = goal.z - bot.pos.z;
-            const float desiredYaw = std::atan2(-gx, -gz);
+            const Vec2 aim=trainedBots&&bot.memory>0?bot.searchCenter:goal;
+            const float desiredYaw = std::atan2(bot.pos.x-aim.x,bot.pos.z-aim.z);
             bot.yaw = std::remainder(bot.yaw + std::clamp(std::remainder(desiredYaw - bot.yaw, 2 * PI),
                                                          -dt * 3.5f, dt * 3.5f), 2 * PI);
             const Vec2 before = bot.pos;
-            if (range > (visible ? 6.f : .5f)) {
+            if (advance && distance(bot.pos,goal) > (trainedBots?.5f:(visible?6.f:.5f))) {
                 const float length = std::hypot(gx, gz);
                 const float pace = (bot.awareness!=Awareness::Patrol && range > 12 ? 3.8f : 2.1f) * (1.f - .60f * bot.crouch);
                 const float amount = std::min(length, pace * dt);
@@ -665,16 +738,24 @@ private:
             const float finalRange = std::hypot(finalDx, finalDz);
             const bool aimed = finalRange < .001f ||
                 (facing.x * finalDx + facing.z * finalDz) / finalRange > .985f;
-            if (finalRange < 23 && aimed && bot.cooldown <= 0 && botSees(bot, target, obstacles)
+            auto& botGun=bot.guns[static_cast<std::size_t>(bot.selected)];
+            const float weaponRange=bot.selected==WeaponId::AW9?30.f:23.f;
+            if (wantsFire && finalRange < weaponRange && aimed && bot.cooldown <= 0 &&
+                (!trainedBots || (bot.switchRemaining<=0&&botGun.cooldown<=0&&botGun.reloadRemaining<=0&&botGun.ammo>0))
+                && botSees(bot, target, obstacles)
                 && lineOfSight(chest, muzzle, obstacles) && lineOfSight(muzzle, target, obstacles)) {
                 // Direct mt19937 integer conversion avoids platform-dependent
                 // uniform_real_distribution results in reproducibility tests.
-                bot.cooldown = 1.15f + static_cast<float>(random_() % 6000) / 10000.f;
+                if(trainedBots)botGun.fire();
+                bot.cooldown = (bot.selected==WeaponId::AW9?1.35f:1.15f)+static_cast<float>(random_()%6000)/10000.f;
                 bot.shotFlash = .08f;
-                player.health = std::max(0, player.health - 9);
+                // Preserve the existing rifle damage; sniper damage uses the
+                // same 1/4 player-weapon damage scale, not a training stat bonus.
+                const int damage=bot.selected==WeaponId::AW9?31:9;
+                player.health = std::max(0, player.health - damage);
                 damageFlash = .22f;
-                events.push_back({EventType::BotShot, static_cast<int>(i), WeaponId::AR7, bot.pos});
-                events.push_back({EventType::PlayerHit, static_cast<int>(i), WeaponId::AR7, player.pos, 9});
+                events.push_back({EventType::BotShot, static_cast<int>(i), bot.selected, bot.pos});
+                events.push_back({EventType::PlayerHit, static_cast<int>(i), bot.selected, player.pos, static_cast<float>(damage)});
                 if (player.health <= 0) {
                     finish(false);
                     noises.clear();

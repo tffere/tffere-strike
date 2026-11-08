@@ -6,9 +6,10 @@
 #include <string>
 #include <vector>
 using namespace strike;
+tactics::Policy benchmarkPolicy;bool useTrainedPolicy=false;
 struct Result {std::string category,name;bool passed;};
 Game arena(Vec2 player={0,-12}) {
-    Game g;g.start();g.obstacles.clear();g.player.pos=player;
+    Game g;if(useTrainedPolicy)g.useBotPolicy(benchmarkPolicy);g.start();g.obstacles.clear();g.player.pos=player;
     for(auto& b:g.bots)b.hp=0;
     auto& b=g.bots[0];b=Bot{};b.cooldown=100;
     return g;
@@ -18,6 +19,7 @@ void advance(Game& g,float duration) {
 }
 bool shot(const Game& g){for(auto e:g.events)if(e.type==EventType::BotShot)return true;return false;}
 int main(int argc,char** argv){
+    if(argc>2){benchmarkPolicy=tactics::Policy::load(argv[2]);useTrainedPolicy=true;}
     std::vector<Result> results;
     auto record=[&](std::string category,std::string name,bool pass){results.push_back({category,name,pass});};
     {
