@@ -73,8 +73,8 @@ struct PlayerOpponent {
 };
 struct ActualResult {int winner=-1,ticks=0,damage=0,taken=0,shots=0,switches=0,coverEntries=0;};
 inline ActualResult actualEpisode(const tactics::Policy& policy,unsigned seed,bool defender,
-                                 tactics::Policy* learner=nullptr,std::mt19937* exploration=nullptr,double epsilon=0){
-    Game game(true);game.useBotPolicy(policy);game.start();
+                                 tactics::Policy* learner=nullptr,std::mt19937* exploration=nullptr,double epsilon=0,bool legacy=false){
+    Game game(true);if(!legacy)game.useBotPolicy(policy);game.start();
     const int spawn=int(seed%6);game.bots[0]=game.bots[spawn];
     for(int i=1;i<6;i++)game.bots[i].hp=0;
     game.kills=5;
@@ -83,8 +83,10 @@ inline ActualResult actualEpisode(const tactics::Policy& policy,unsigned seed,bo
     PlayerOpponent opponent(defender);ActualResult result;
     while(game.mode==Mode::Playing){
         auto observation=game.botObservation(0);int state=observation.index();
-        int action=learner?learner->choose(observation,epsilon,*exploration):policy.greedy(observation);
-        game.bots[0].forcedAction=action;game.bots[0].decisionRemaining=0;
+        int action=observation.known?(learner?learner->choose(observation,epsilon,*exploration):policy.greedy(observation)):tactics::Search;
+        // Frozen evaluations run the very same autonomous policy path as the
+        // playable game. Only training injects exploratory decisions.
+        if(learner){game.bots[0].forcedAction=action;game.bots[0].decisionRemaining=0;}
         double reward=0;bool oldCover=observation.covered;
         for(int frame=0;frame<5&&game.mode==Mode::Playing;frame++){
             opponent.observe(game);auto input=opponent.input(game);

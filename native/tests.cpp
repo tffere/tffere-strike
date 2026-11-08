@@ -1,6 +1,7 @@
 #include "gameplay.hpp"
 #include "bot_pose.hpp"
 #include <functional>
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -34,6 +35,15 @@ int main() {
     using namespace strike;
     using Test = std::pair<const char*, std::function<void()>>;
     const std::vector<Test> tests{
+        {"shipped policy loads and drives autonomous decisions", [] {
+            auto path=std::filesystem::path(__FILE__).parent_path()/"assets"/"bot-policy.txt";
+            auto p=tactics::Policy::load(path.string());Game g;g.useBotPolicy(p);g.start();quiet(g);
+            g.obstacles.clear();g.player.pos={0,-8};g.bots[0]=Bot{};
+            for(int i=0;i<20;i++)g.step(.05f);
+            check(g.bots[0].forcedAction==-1,"autonomous game used training overrides");
+            check(g.bots[0].tacticalAction>=0&&g.bots[0].tacticalAction<tactics::ACTIONS,"invalid learned action");
+            check(g.trainedBots,"shipped policy was not enabled");
+        }},
         {"trained policy switches weapons with delay and tracks sniper ammunition", [] {
             Game g;g.start();quiet(g);g.obstacles.clear();g.player.pos={0,-8};
             auto& b=g.bots[0];b=Bot{};b.pos={0,0};b.cooldown=0;

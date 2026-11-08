@@ -2,7 +2,7 @@
 
 Format: STRIKE_Q_V2; 192 states × 9 actions.
 
-Selected checkpoint: actual-game training round 10, after a complete 100-round run. Selection used separate validation seeds; it did not select on final evaluation results. This starts from simplified-run checkpoint 30 and was further trained through the real Game::step implementation on the desert map.
+Selected checkpoint: actual-game round 0 (the imported simplified-run checkpoint 30). A complete 100-round real Game::step experiment was run on the desert map, but no later checkpoint beat the starting policy in validation. The best existing trained policy is retained. Final tests use the same autonomous inference path as the game; the new 100 rounds showed no additional win-rate gain. See training/runs/2026-11-08-actual-game/REPORT.md for corrections to earlier preliminary comparisons.
 
 Frozen gameplay inference only; the distributed game does not train during play.
 
