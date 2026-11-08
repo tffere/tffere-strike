@@ -53,7 +53,7 @@ struct BotRenderer {
             if(game.mode!=Mode::Playing)continue;
             float travelled=strike::distance(p.previous,b.pos);float speed=dt>0?travelled/dt:0;
             p.previous=b.pos;p.speed+=(speed-p.speed)*std::min(1.f,dt*10);
-            p.phase+=travelled/.65f*2*PI;
+            p.phase+=travelled/(b.speed>2.8f?1.5f:1.15f)*2*PI;
             float turn=std::remainder(b.yaw-p.yaw,2*PI);p.yaw+=turn*std::min(1.f,dt*8);
             p.hit=std::max(0.f,p.hit-dt*5);
             if(b.hp<p.hp&&b.hp>0)p.hit=1;
@@ -76,24 +76,28 @@ struct BotRenderer {
     template<class G> void draw(G& g,const strike::Bot& b,int index,float elapsed){
         auto& p=poses[index];if(!p.initialized)return;
         float motion=std::clamp(p.speed/1.3f,0.f,1.f),phase=p.phase;
-        float bounce=std::abs(std::sin(phase))*.018f*motion;
+        float running=std::clamp((p.speed-2.f)/1.8f,0.f,1.f);
+        float airborne=std::clamp(b.feet*3.f,0.f,1.f);
+        float crouch=b.crouch;
+        float bounce=std::abs(std::sin(phase))*(.018f+.025f*running)*motion*(1-airborne);
         float breathe=std::sin(elapsed*2.1f+index)*.004f;
         float lean=std::sin(elapsed*.65f+index)*.025f*(1-motion);
-        rlPushMatrix();rlTranslatef(b.pos.x,p.death*.10f,b.pos.z);rlRotatef(p.yaw*RAD2DEG,0,1,0);
+        rlPushMatrix();rlTranslatef(b.pos.x,b.feet*(1-p.death)+p.death*.10f,b.pos.z);rlRotatef(p.yaw*RAD2DEG,0,1,0);
         rlRotatef(p.death*88-p.hit*7,1,0,0);rlTranslatef(lean,bounce,0);
         Color fabric{110,121,91,255},pants{148,143,113,255},armor{69,80,66,255},web{101,111,80,255},skin{178,143,110,255};
         // Feet travel through an alternating planted/swing cycle; knees bend forward.
         for(int side=-1;side<=1;side+=2){
-            float q=phase+(side<0?PI:0),swing=std::sin(q),lift=std::max(0.f,std::cos(q))*.10f*motion;
-            Vector3 hip{side*.105f,.94f,0},knee{side*.105f,.49f-lift*.2f,-.045f-std::max(0.f,swing)*.12f*motion};
-            Vector3 ankle{side*.11f,.10f+lift,swing*.20f*motion};
+            float q=phase+(side<0?PI:0),swing=std::sin(q),lift=std::max(0.f,std::cos(q))*(.10f+.12f*running)*motion*(1-airborne);
+            Vector3 hip{side*.105f,.94f-.55f*crouch,0},knee{side*.105f,.49f-.15f*crouch-lift*.2f,-.045f-.25f*crouch-.18f*airborne-std::max(0.f,swing)*(.12f+.1f*running)*motion};
+            Vector3 ankle{side*.11f,.10f+lift,swing*(.20f+.13f*running)*motion*(1-airborne)};
             segment(g,hip,knee,.106f,.107f,pants);segment(g,knee,ankle,.078f,.080f,pants);
             g.sphere(knee,{.084f,.105f,.085f},armor);
             g.box({knee.x,knee.y,knee.z-.072f},{.112f,.145f,.036f},{80,87,70,255});
             g.mesh(boot,{ankle.x,lift,ankle.z},{.92f,.85f,.94f},{48,49,42,255});
             for(int n=0;n<4;n++)g.box({ankle.x,.10f+lift+n*.018f,ankle.z-.095f},{.09f,.008f,.012f},{89,87,66,255});
-            g.box({side*.155f,.77f,.02f},{.065f,.18f,.13f},web);
+            g.box({side*.155f,.77f-.55f*crouch,.02f},{.065f,.18f,.13f},web);
         }
+        rlPushMatrix();rlTranslatef(0,-.55f*crouch,0);
         garment(g,torso,{0,.92f,0},{1,1,1},fabric);
         // Shaped carrier front/back, straps, magazines, belt equipment and radio.
         g.mesh(torso,{0,.995f,-.055f},{1.05f,.76f,1.2f},armor);
@@ -153,6 +157,7 @@ struct BotRenderer {
         g.box({.07f,1.315f,-.10f},{.07f,.10f,.17f},{51,58,49,255});
         for(int n=0;n<7;n++)g.box({.07f,1.358f,-.24f-n*.035f},{.07f,.012f,.014f},{81,88,76,255});
         if(b.shotFlash>0&&!g.shadowPass)g.sphere({.07f,1.32f,-.91f},{.045f,.045f,.10f},{255,220,134,255});
+        rlPopMatrix();
         rlPopMatrix();
     }
 };

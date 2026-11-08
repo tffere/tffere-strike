@@ -10,8 +10,8 @@
 //   after each step for audio/FX. Movement/fire/sprint are held inputs; all other
 //   input flags are edge inputs. Each step clears previous events, caps elapsed
 //   time at 0.25 s, and preserves state while paused. Yaw 0 faces -Z; world +Y is
-//   up. Player y is eye height; feet are y - EYE_HEIGHT. Bots stand at y=0 and
-//   their heads occupy y=1.55..1.88. AABB obstacle x/z values are center points.
+//   up. Player y is eye height; feet are y - EYE_HEIGHT. Bot feet and crouch
+//   shift their rendered stance, eye/muzzle positions and hitboxes. AABB obstacle x/z values are center points.
 //   Weapon reload/cooldown state is preserved across switches. Reloading AW-9
 //   exits scope. lastShot records the most recent fired ray for visual tracers;
 //   muzzleFlash and hitMarker are short remaining durations in seconds.
@@ -110,6 +110,8 @@ struct Bot {
     int hp = 100;
     float phase = 0, cooldown = 1, shotFlash = 0;
     float yaw = 0;
+    float feet = 0, verticalVelocity = 0, crouch = 0, speed = 0;
+    float actionCooldown = 2, crouchRemaining = 0;
     Vec2 navigationTarget{};
     float navigationCooldown = 0;
     bool alive() const { return hp > 0; }
@@ -252,6 +254,22 @@ inline Vec3 viewDirection(float yaw, float pitch) {
     const float cp = std::cos(pitch);
     return {-std::sin(yaw) * cp, std::sin(pitch), -std::cos(yaw) * cp};
 }
+inline float botHeadBase(const Bot& bot) { return bot.feet + 1.55f - .55f * bot.crouch; }
+inline Vec3 botEye(const Bot& bot) { return {bot.pos.x, bot.feet + 1.7f - .55f * bot.crouch, bot.pos.z}; }
+inline Vec3 botMuzzle(const Bot& bot) {
+    const auto forward = viewDirection(bot.yaw, 0);
+    return {bot.pos.x + forward.x * .87f, bot.feet + 1.32f - .55f * bot.crouch,
+            bot.pos.z + forward.z * .87f};
+}
+inline bool botSees(const Bot& bot, Vec3 target, const std::vector<Obstacle>& obstacles) {
+    const auto eye = botEye(bot);
+    const float dx = target.x - eye.x, dz = target.z - eye.z;
+    const float horizontal = std::hypot(dx, dz);
+    if (horizontal > 30.f || std::abs(target.y - eye.y) > std::max(1.f, horizontal)) return false;
+    const auto forward = viewDirection(bot.yaw, 0);
+    if (horizontal > .001f && (forward.x * dx + forward.z * dz) / horizontal < .5f) return false;
+    return lineOfSight(eye, target, obstacles);
+}
 inline std::vector<Obstacle> depotObstacles() {
     return {
         {-16, -10, 12, 14, 8, ObstacleKind::Building},
@@ -347,11 +365,11 @@ public:
             const auto& bot = bots[i];
             if (!bot.alive()) continue;
             const float headHit = rayBox(origin, direction,
-                {bot.pos.x - .18f, 1.55f, bot.pos.z - .18f},
-                {bot.pos.x + .18f, 1.88f, bot.pos.z + .18f});
+                {bot.pos.x - .18f, botHeadBase(bot), bot.pos.z - .18f},
+                {bot.pos.x + .18f, botHeadBase(bot) + .33f, bot.pos.z + .18f});
             const float bodyHit = rayBox(origin, direction,
-                {bot.pos.x - .31f, .2f, bot.pos.z - .25f},
-                {bot.pos.x + .31f, 1.55f, bot.pos.z + .25f});
+                {bot.pos.x - .31f, bot.feet + .2f, bot.pos.z - .25f},
+                {bot.pos.x + .31f, botHeadBase(bot), bot.pos.z + .25f});
             if (headHit < closest) {
                 closest = headHit;
                 target = static_cast<int>(i);
@@ -450,6 +468,8 @@ private:
         for (std::size_t i = 0; i < bots.size(); ++i) {
             bots[i] = Bot{};
             bots[i].pos = bots[i].spawn = desertMap?DESERT_BOT_SPAWNS[i]:starts[i];
+            bots[i].yaw = std::atan2(player.pos.x - bots[i].pos.x, player.pos.z - bots[i].pos.z) + PI;
+            bots[i].actionCooldown = 1.5f + static_cast<float>(i) * .55f;
             bots[i].phase = static_cast<float>(i);
             bots[i].cooldown = 1 + static_cast<float>(i) * .35f;
         }
@@ -466,33 +486,58 @@ private:
             if (!bot.alive()) continue;
             const float dx = player.pos.x - bot.pos.x, dz = player.pos.z - bot.pos.z;
             const float range = std::hypot(dx, dz);
-            bot.yaw = std::atan2(-dx, -dz);
-            const bool visible = lineOfSight({bot.pos.x, 1.4f, bot.pos.z},
-                                            {player.pos.x, player.y, player.pos.z}, obstacles);
-            bot.phase += dt * 6;
-            bot.navigationCooldown -= dt;
-            if (range > 6 || !visible) {
-                float mx = 0, mz = 0;
-                if (visible) {
-                    mx = dx / range * 1.35f * dt;
-                    mz = dz / range * 1.35f * dt;
-                    bot.navigationCooldown = 0;
-                } else {
-                    if (bot.navigationCooldown <= 0 || distance(bot.pos, bot.navigationTarget) < .15f) {
-                        bot.navigationTarget = navigationWaypoint(bot.pos, player.pos, obstacles);
-                        bot.navigationCooldown = .8f + static_cast<float>(i) * .04f;
-                    }
-                    const float dist = distance(bot.pos, bot.navigationTarget);
-                    if (dist > .01f) {
-                        const float amount = std::min(dist, 1.2f * dt);
-                        mx = (bot.navigationTarget.x - bot.pos.x) / dist * amount;
-                        mz = (bot.navigationTarget.z - bot.pos.z) / dist * amount;
-                    }
-                }
-                moveActor(bot.pos, mx, mz, obstacles, .36f);
+            const Vec3 target{player.pos.x, player.y, player.pos.z};
+            const bool clear = lineOfSight(botEye(bot), target, obstacles);
+            bot.actionCooldown -= dt;
+            bot.crouchRemaining = std::max(0.f, bot.crouchRemaining - dt);
+            if (bot.actionCooldown <= 0 && bot.feet <= 0) {
+                // Stagger actions so patrols do not jump/crouch in unison.
+                if (clear && range < 16 && (i + static_cast<int>(elapsed / 3)) % 2 == 0)
+                    bot.crouchRemaining = 1.3f;
+                else if (range > 7) bot.verticalVelocity = 5.2f;
+                bot.actionCooldown = 3.5f + static_cast<float>(i) * .27f;
             }
+            const float stance = bot.crouchRemaining > 0 && bot.feet <= 0 ? 1.f : 0.f;
+            bot.crouch += std::clamp(stance - bot.crouch, -dt * 4, dt * 4);
+            // Jump is a real vertical arc. Horizontal collision stays conservative:
+            // bots jump on navigable ground rather than clipping through cover.
+            bot.verticalVelocity -= 16 * dt;
+            bot.feet = std::max(0.f, bot.feet + bot.verticalVelocity * dt);
+            if (bot.feet <= 0) bot.verticalVelocity = 0;
+            bot.navigationCooldown -= dt;
+            Vec2 goal = player.pos;
+            if (!clear) {
+                if (bot.navigationCooldown <= 0 || distance(bot.pos, bot.navigationTarget) < .2f) {
+                    bot.navigationTarget = navigationWaypoint(bot.pos, player.pos, obstacles);
+                    bot.navigationCooldown = .8f + static_cast<float>(i) * .04f;
+                }
+                goal = bot.navigationTarget;
+            } else bot.navigationCooldown = 0;
+            const float gx = goal.x - bot.pos.x, gz = goal.z - bot.pos.z;
+            const float desiredYaw = std::atan2(-gx, -gz);
+            bot.yaw = std::remainder(bot.yaw + std::clamp(std::remainder(desiredYaw - bot.yaw, 2 * PI),
+                                                         -dt * 3.5f, dt * 3.5f), 2 * PI);
+            const Vec2 before = bot.pos;
+            if (range > 6 || !clear) {
+                const float length = std::hypot(gx, gz);
+                const float pace = (range > 12 ? 3.8f : 2.1f) * (1.f - .60f * bot.crouch);
+                const float amount = std::min(length, pace * dt);
+                if (length > .001f) moveActor(bot.pos, gx / length * amount, gz / length * amount, obstacles, .36f);
+            }
+            bot.speed = dt > 0 ? distance(before, bot.pos) / dt : 0;
+            bot.phase += distance(before, bot.pos) * 7;
             bot.cooldown -= dt;
-            if (visible && range < 23 && bot.cooldown <= 0) {
+            // Check the final position and posture, both eyes and muzzle. The
+            // muzzle must also be reachable from the body (no barrel through walls).
+            const Vec3 muzzle = botMuzzle(bot);
+            const Vec3 chest{bot.pos.x, muzzle.y, bot.pos.z};
+            const auto facing = viewDirection(bot.yaw, 0);
+            const float finalDx = target.x - bot.pos.x, finalDz = target.z - bot.pos.z;
+            const float finalRange = std::hypot(finalDx, finalDz);
+            const bool aimed = finalRange < .001f ||
+                (facing.x * finalDx + facing.z * finalDz) / finalRange > .985f;
+            if (finalRange < 23 && aimed && bot.cooldown <= 0 && botSees(bot, target, obstacles)
+                && lineOfSight(chest, muzzle, obstacles) && lineOfSight(muzzle, target, obstacles)) {
                 // Direct mt19937 integer conversion avoids platform-dependent
                 // uniform_real_distribution results in reproducibility tests.
                 bot.cooldown = 1.15f + static_cast<float>(random_() % 6000) / 10000.f;

@@ -1,3 +1,4 @@
-6a274b138a9397bc77ad4c241797876297af1dfcd8b44d8a1fccbde596bf88fa  TffereStrike-Windows-x64.zip
+4df25a248f6009d92af42c75679f89d5e5cb70dda5fdfc0ebdca8d93c6825cc0  TffereStrike-Windows-x64.zip
 0657ded6edaf790962d7a9c39625703f3ec17c8b5b9d3feae25bf0d121311684  TffereStrike-v1.0-Windows-x64.zip
 6a274b138a9397bc77ad4c241797876297af1dfcd8b44d8a1fccbde596bf88fa  TffereStrike-v1.1-Windows-x64.zip
+4df25a248f6009d92af42c75679f89d5e5cb70dda5fdfc0ebdca8d93c6825cc0  TffereStrike-v1.2-Windows-x64.zip

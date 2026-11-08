@@ -1,20 +1,28 @@
-# Tffere Strike — Native C++ v1.1
+# Tffere Strike — Native C++ v1.2
 
 A standalone Windows desktop FPS written in C++17 with raylib. Play against six bots in a connected desert quarter, choose an AR-7 rifle or AW-9 sniper, use cover, and clear the depot before the round ends.
 
 ## Download and play on Windows
 
-1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.1-Windows-x64.zip).
+1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.2-Windows-x64.zip).
 2. Right-click the ZIP and select **Extract All**. Open the extracted `TffereStrike` folder.
 3. Double-click **TffereStrike.exe**. Keep its `assets` folder beside it.
 4. Click **Deploy into Depot**, or press **Enter**.
 
 No Node.js, npm, Python, browser, or development tools are needed to play. Requires Windows 10/11 x64 with an OpenGL 3.3-capable graphics driver. Extract the whole ZIP; do not run the executable from inside the archive. The executable is not digitally signed.
 
-## Keep both versions
+## v1.2 bot update
+
+Bots now run on approach, turn gradually, perform staggered jumps and crouch during combat. Longer running strides, airborne knee bends and lowered crouching poses follow gameplay state. Eye height, muzzle height and bullet hitboxes follow jumping and crouching.
+
+Bots acquire shots within a 120-degree horizontal field of view and fire only after aiming within roughly 10 degrees of the player. Every shot rechecks visibility after movement: the eye-to-player, chest-to-muzzle and muzzle-to-player paths must all be clear of collision objects. Bots still navigate toward the player when hidden; this is not a stealth-awareness simulation. Jumping stays on navigable ground and does not vault obstacles.
+
+## Keep previous versions
 
 - [v1.0: original depot](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.0-Windows-x64.zip)
 - [v1.1: Sandstone desert map and revised characters](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.1-Windows-x64.zip)
+
+- [v1.2: running, jumping, crouching and stricter bot visibility](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.2-Windows-x64.zip)
 
 Extract each version into a separate folder. The `v1.0` and `v1.1` Git tags preserve their source; `upgrade-desert-map` records the upgrade work. Neither download requires installing the other.
 
@@ -47,7 +55,7 @@ Extract each version into a separate folder. The `v1.0` and `v1.1` Git tags pres
 - Six bots with cover-aware vision/shooting and deterministic navigation around obstacles.
 - Radar, hit feedback, health, ammunition, a three-minute round, pause, restart and win/loss states.
 
-This is a compact single-player game with stylized original models, not a recreation of Counter-Strike or the earlier generated concept artwork. There is no multiplayer, matchmaking, campaign, or advanced character animation rig. All screenshots below come from the executable.
+This is a compact single-player game with stylized original models, not a recreation of Counter-Strike or the earlier generated concept artwork. There is no multiplayer, matchmaking, campaign, or advanced character animation rig. The screenshots below show the v1.1 executable and map; v1.2 changes bot behavior and animation.
 
 ![Actual native gameplay](docs/native-gameplay.png)
 
@@ -85,10 +93,11 @@ python3 native/build.py --platform windows --zig /path/to/zig --package
 
 ## Validation
 
-- 20 gameplay cases cover movement, swept collision, jumping, bullets and cover, rifle/sniper behavior, scope, pause, navigation, bot combat, rounds and determinism, plus desert spawn/restart consistency and continuous routes from every patrol spawn.
-- Native Linux graphical smoke and actual Windows x64 executable smoke under Wine check window/render creation, movement, weapon selection, scope and firing.
-- The standalone Windows gameplay test executable is also run under Wine. This does not replace testing on every Windows GPU or driver.
-- Launch with `--smoke-test` to run the short graphical check and save a screenshot. `--capture` captures the initial gameplay view. Normal launches start at the menu.
+For v1.2, all 25 native gameplay tests pass on Linux, including field-of-view boundaries, gradual turning, muzzle obstruction despite visible eyes, running/jumping/landing, crouch transitions and stance-aware hitboxes. The eight earlier browser prototype tests also pass. The Windows x64 package is cross-compiled with Zig 0.13.0.
+
+A graphical Windows playtest of v1.2 has not been performed in this environment. The earlier v1.1 graphical smoke tests do not validate the new animation. Please try v1.2 on your Windows machine and report movement or rendering issues.
+
+Launch with `--smoke-test` for a short graphical check and screenshot, or `--capture` for an initial gameplay view. Normal launches start at the menu.
 
 ## Assets and licenses
 

@@ -295,7 +295,7 @@ int main(int argc,char** argv){
     for(int i=1;i<argc;i++){if(!std::strcmp(argv[i],"--smoke-test"))smoke=true;if(!std::strcmp(argv[i],"--capture"))capture=true;if(!std::strcmp(argv[i],"--capture-nw")){capture=true;sectorCapture=4;}if(!std::strcmp(argv[i],"--capture-ne")){capture=true;sectorCapture=5;}if(!std::strcmp(argv[i],"--capture-sw")){capture=true;sectorCapture=6;}if(!std::strcmp(argv[i],"--capture-se")){capture=true;sectorCapture=7;}if(!std::strcmp(argv[i],"--capture-long")){capture=true;sectorCapture=1;}if(!std::strcmp(argv[i],"--capture-west")){capture=true;sectorCapture=2;}if(!std::strcmp(argv[i],"--capture-court")){capture=true;sectorCapture=3;}if(!std::strcmp(argv[i],"--bot-capture")){botCapture=true;capture=true;}if(!std::strcmp(argv[i],"--map-capture")){mapCapture=true;capture=true;}}
     std::filesystem::path base=std::filesystem::absolute(argv[0]).parent_path();
     SetTraceLogLevel(LOG_WARNING);SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT|FLAG_VSYNC_HINT);
-    InitWindow(1280,720,"Tffere Strike v1.1 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
+    InitWindow(1280,720,"Tffere Strike v1.2 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
     int exitCode=0;
     try{
         std::filesystem::path assets=base/"assets";
@@ -354,7 +354,10 @@ int main(int argc,char** argv){
                 if(e.type==E::BotHit){audio.play(3);hitFade=1;}
                 if(e.type==E::BotKilled)audio.play(5);
                 if(e.type==E::EmptyClick)audio.play(6);
-                if(e.type==E::BotShot){audio.play(6);tracers.push_back({{e.position.x,1.3f,e.position.z},{game.player.pos.x,game.player.y,game.player.pos.z},.04f});}
+                if(e.type==E::BotShot){
+                    audio.play(6);const auto muzzle=strike::botMuzzle(game.bots[e.bot]);
+                    tracers.push_back({{muzzle.x,muzzle.y,muzzle.z},{game.player.pos.x,game.player.y,game.player.pos.z},.04f});
+                }
             }
             hitFade=std::max(0.f,hitFade-dt*5);
             for(auto& t:tracers)t.life-=dt;

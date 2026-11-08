@@ -33,6 +33,55 @@ int main() {
     using namespace strike;
     using Test = std::pair<const char*, std::function<void()>>;
     const std::vector<Test> tests{
+        {"vision rejects targets behind, outside cone, or behind cover", [] {
+            Bot bot; bot.pos={0,0}; bot.yaw=0;
+            check(botSees(bot,{0,1.7f,-8},{}), "front target unseen");
+            check(!botSees(bot,{0,1.7f,8},{}), "target behind seen");
+            check(!botSees(bot,{8,1.7f,0},{}), "side target seen");
+            check(!botSees(bot,{0,1.7f,-8},{{0,-4,3,1,3}}), "wall did not occlude sight");
+            check(!botSees(bot,{0,1.7f,-31},{}), "vision range unlimited");
+        }},
+        {"bots turn gradually and cannot fire behind themselves", [] {
+            Game game; game.start(); game.obstacles.clear(); quiet(game);
+            auto& b=game.bots[0]; b.hp=100; b.pos={0,10}; b.yaw=0; b.cooldown=0;
+            game.step(.1f);
+            check(std::abs(b.yaw)<=.351f,"bot snapped to target");
+            check(!hasEvent(game,EventType::BotShot),"bot fired outside vision");
+        }},
+        {"muzzle cover blocks firing even when eyes see over it", [] {
+            Game game; game.start(); quiet(game); game.player.pos={0,-5};
+            auto& b=game.bots[0]; b.hp=100; b.pos={0,0}; b.yaw=0; b.cooldown=0;
+            game.obstacles={{0,-.5f,3,.2f,1.5f}};
+            check(botSees(b,{0,1.7f,-5},game.obstacles),"eyes should see over cover");
+            game.step(.02f);
+            check(!hasEvent(game,EventType::BotShot),"barrel fired through cover");
+        }},
+        {"bots run, jump, land and crouch on staggered action timers", [] {
+            Game game; game.start(); game.obstacles.clear(); quiet(game);
+            auto& b=game.bots[0]; b.hp=100; b.pos={0,-5}; b.cooldown=100;
+            b.actionCooldown=0;
+            game.step(.05f);
+            check(b.speed>3,"bot did not run");
+            check(b.feet>0 && b.verticalVelocity>0,"bot did not jump");
+            for(int i=0;i<60;i++) game.step(.02f);
+            check(near(b.feet,0),"bot failed to land");
+            b.pos={0,10}; b.actionCooldown=100; b.crouchRemaining=1;
+            for(int i=0;i<20;i++) game.step(.02f);
+            check(b.crouch>.95f && botHeadBase(b)<1.05f,"crouch did not lower hitbox");
+            for(int i=0;i<65;i++) game.step(.02f);
+            check(near(b.crouch,0),"bot failed to stand");
+        }},
+        {"crouching and airborne hitboxes follow rendered stance", [] {
+            Game game; game.start(); game.obstacles.clear(); quiet(game);
+            auto& b=game.bots[0]; b.hp=100; b.pos={0,5}; b.crouch=1;
+            aim(game,b.pos,1.7f); game.shoot();
+            check(!game.lastShot.hit,"standing head ray hit crouching bot");
+            game.weapon().cooldown=0; aim(game,b.pos,1.15f); game.shoot();
+            check(game.lastShot.hit && game.lastShot.headshot,"crouching head missed");
+            b.hp=100; b.crouch=0; b.feet=1; game.weapon().cooldown=0;
+            aim(game,b.pos,.6f); game.shoot();
+            check(!game.lastShot.hit,"ground ray hit airborne bot");
+        }},
         {"circle collision, corners, clearance and map limits", [] {
             const std::vector<Obstacle> obstacles{{0, 0, 2, 2, 2}};
             check(circleBlocked({0, 0}, .35f, obstacles), "box interior must collide");
