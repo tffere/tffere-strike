@@ -1,55 +1,83 @@
-# Tffere Strike — Depot
+# Tffere Strike — Native C++
 
-An original single-player tactical FPS prototype inspired by early-2000s PC shooters. Explore one compact industrial courtyard, use crates and shipping containers as cover, and eliminate six patrol units before the three-minute round expires. All map geometry, interface, procedural textures, sounds, and weapon models are original. It does not use Counter-Strike assets or networking.
+A standalone Windows desktop FPS written in C++17 with raylib. Play against six bots in an industrial courtyard, choose an AR-7 rifle or AW-9 sniper, use cover, and clear the depot before the round ends.
 
-## Run locally
+## Download and play on Windows
 
-Install Node.js 20 or newer. In this folder:
+1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-Windows-x64.zip).
+2. Right-click the ZIP and select **Extract All**. Open the extracted `TffereStrike` folder.
+3. Double-click **TffereStrike.exe**. Keep its `assets` folder beside it.
+4. Click **Deploy into Depot**, or press **Enter**.
 
-```sh
-npm ci
-npm start
-```
-
-Open `http://localhost:4174` in a desktop browser with WebGL enabled, then click **Deploy into Depot**. The page captures the mouse for first-person looking. The server uses port 4174 by default; set `PORT` to choose another port. Keep the server running while playing. On restricted systems where npm cannot write its default cache, use `npm ci --cache ./node_modules/.npm-cache`.
+No Node.js, npm, Python, browser, or development tools are needed to play. Requires Windows 10/11 x64 with an OpenGL 3.3-capable graphics driver. Extract the whole ZIP; do not run the executable from inside the archive. The executable is not digitally signed.
 
 ## Controls
 
-| Input             | Action                          |
-| ----------------- | ------------------------------- |
-| W / A / S / D     | Move                            |
-| Mouse             | Look                            |
-| Left mouse / hold | Fire                            |
-| R                 | Reload current weapon           |
-| 1 / 2             | Select AR-7 rifle / AW-9 sniper |
-| Right mouse       | Toggle AW-9 scope               |
-| Space             | Jump                            |
-| Left Shift        | Sprint                          |
-| Escape            | Pause and release mouse         |
-| Enter             | Start / resume / new round      |
+| Input | Action |
+| --- | --- |
+| W / A / S / D | Move |
+| Mouse | Look |
+| Left mouse / hold | Fire |
+| 1 / 2 | AR-7 rifle / AW-9 sniper |
+| Right mouse | Toggle sniper scope |
+| R | Reload; restart when paused |
+| Space | Jump |
+| Left Shift | Sprint |
+| Escape | Pause/resume; close from the start/end menu |
+| Enter | Deploy / resume / new round |
+| F11 | Toggle fullscreen |
+| M | Mute/unmute sound |
+| F3 | Show performance info |
+| F4 | Toggle shadows |
 
-The AR-7 has a 30-round magazine and 90 reserve rounds. Body hits deal 36 damage and head hits deal 75. The AW-9 bolt-action sniper has a five-round magazine and 20 reserve rounds, a 1.35-second shot interval, and a 2.5-second reload. Its body hits deal 125 damage and head hits 220; each patrol unit has 100 health. Right-click with the sniper selected to smoothly zoom through the scope; scoped mouse sensitivity is reduced. Switching back to the rifle exits the scope. Each weapon keeps its own ammo and reload state. Both weapons have original synthesized firing, handling, and reload sounds. The AW-9 is an original low-poly model with a long barrel, stock, magazine, rail, scope lenses and adjustment knobs, and a bolt handle. Enemies patrol or approach, see and shoot only with an unobstructed line of sight, and cannot shoot through solid cover. The radar shows the arena layout, player heading, and remaining enemies. Death, a cleared courtyard, or the time limit ends the round. Deploy again to reset the map.
+## Included
 
-## Checks
+- Textured courtyard, warehouses, freight containers, crates, catwalk, radio mast and directional shadows.
+- Original rounded, articulated bot models and detailed procedural rifle/sniper models with hands, recoil and reload movement.
+- Animated sniper zoom and reticle, separate ammunition/reload state, and distinct fire rates and damage.
+- Synthesized firing, reload, hit and footstep sounds. A missing audio device does not prevent play.
+- Six bots with cover-aware vision/shooting and deterministic navigation around obstacles.
+- Radar, hit feedback, health, ammunition, a three-minute round, pause, restart and win/loss states.
+
+This is a compact single-player game with stylized original models, not a recreation of Counter-Strike or the earlier generated concept artwork. There is no multiplayer, matchmaking, campaign, or advanced character animation rig. All screenshots below come from the executable.
+
+![Actual native gameplay](docs/native-gameplay.png)
+
+## Source and builds
+
+The native version is in [`native/`](native/). The earlier JavaScript prototype remains in the repository for reference; its instructions are in [BROWSER-PROTOTYPE.md](docs/BROWSER-PROTOTYPE.md). Use the Windows ZIP above for the current game.
+
+CMake 3.24+, a C++17 compiler and Internet access to fetch checksum-pinned raylib 5.5 are needed to build from source. On Windows, install Visual Studio Build Tools with **Desktop development with C++**, then:
 
 ```sh
-npm test
+cmake -S native -B native-build -A x64
+cmake --build native-build --config Release --parallel 2
+ctest --test-dir native-build -C Release --output-on-failure
 ```
 
-This runs collision, tunneling, wall sliding, rifle/sniper fire rates, separate ammo/reload behavior, and reset regressions. Browser smoke checks are in `tests/browser-smoke.cjs`; Playwright is pinned as a development dependency. Use installed system Chromium, or run `npx playwright install chromium` once. Set `CHROMIUM_PATH` to override the browser executable. With the server already running:
+Run `native-build/Release/TffereStrike.exe`; assets are copied automatically. `.github/workflows/native.yml` defines the equivalent Windows CI build and artifact.
+
+Linux builds require GCC/G++, CMake and standard X11/OpenGL development packages:
 
 ```sh
-node tests/browser-smoke.cjs
+cmake -S native -B native-build
+cmake --build native-build --parallel 2
+ctest --test-dir native-build --output-on-failure
 ```
 
-The browser test opens explicit `?test=1` mode, which exposes test state/actions. That interface is absent during normal play. Screenshots are written to ignored `artifacts/`.
+`native/build.py` is an alternative direct builder. Windows cross-compilation uses Zig 0.13.0:
 
-## Prototype scope
+```sh
+python3 native/build.py --platform windows --zig /path/to/zig --package
+```
 
-This is a small playable prototype, not a full Counter-Strike replacement. It has two selectable weapons, six simple bots, one map, collision, jumping, cover, pause, and rounds. There is no multiplayer, matchmaking, team economy, bomb objective, animation rig, or advanced pathfinding. Bots can occasionally linger behind cover; use the radar and change lanes to find them. Desktop keyboard and mouse are required.
+## Validation
 
-Three.js is installed locally through npm and pinned in the lockfile. After installation, the game makes no external asset requests. Stop the development server with Ctrl+C. This server is intended for local development and is not a hardened public hosting service.
+- 18 gameplay cases cover movement, swept collision, jumping, bullets and cover, rifle/sniper behavior, scope, pause, navigation, bot combat, rounds and determinism.
+- Native Linux graphical smoke and actual Windows x64 executable smoke under Wine check window/render creation, movement, weapon selection, scope and firing.
+- The standalone Windows gameplay test executable is also run under Wine. This does not replace testing on every Windows GPU or driver.
+- Launch with `--smoke-test` to run the short graphical check and save a screenshot. `--capture` captures the initial gameplay view. Normal launches start at the menu.
 
-## If Deploy does nothing
+## Assets and licenses
 
-Open `http://localhost:4174`, not `index.html` directly. Wait for the button to change from **Loading 3D game** to **Deploy into Depot**. Startup failures now appear in the menu. Run `npm ci` successfully before `npm start`; if a graphics error appears, enable hardware/graphics acceleration in Chrome or Edge and restart the browser. Use F12 → Console to see the specific error.
+Game geometry and sounds are generated by the C++ application. The material atlas is original generated artwork bundled locally. DejaVu font license is in `native/assets/FONT-LICENSE.txt`; the raylib license is included in the downloadable package. Downloads and package hashes are in [`downloads/`](downloads/).

@@ -4,3 +4,12 @@ artifacts/
 .DS_Store
 .env
 .env.*
+
+# Native dependency/build caches and local captures
+native/.cache/
+native/build/
+/native-gameplay.png
+native-build/
+
+__pycache__/
+*.py[cod]

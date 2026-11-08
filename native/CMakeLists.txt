@@ -1,0 +1,31 @@
+cmake_minimum_required(VERSION 3.24)
+project(TffereStrike VERSION 1.0 LANGUAGES C CXX)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+include(FetchContent)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(raylib
+  URL https://codeload.github.com/raysan5/raylib/tar.gz/refs/tags/5.5
+  URL_HASH SHA256=aea98ecf5bc5c5e0b789a76de0083a21a70457050ea4cc2aec7566935f5e258e
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+FetchContent_MakeAvailable(raylib)
+add_executable(TffereStrike main.cpp)
+add_custom_command(TARGET TffereStrike POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
+  "${raylib_SOURCE_DIR}/LICENSE" "$<TARGET_FILE_DIR:TffereStrike>/LICENSE-raylib.txt")
+target_link_libraries(TffereStrike PRIVATE raylib)
+if(MSVC)
+  target_link_options(TffereStrike PRIVATE /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup)
+endif()
+if(MINGW)
+  target_link_options(TffereStrike PRIVATE -static-libgcc -static-libstdc++)
+endif()
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
+  add_custom_command(TARGET TffereStrike POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets" "$<TARGET_FILE_DIR:TffereStrike>/assets")
+endif()
+add_executable(gameplay-tests tests.cpp)
+enable_testing()
+add_test(NAME gameplay COMMAND gameplay-tests)

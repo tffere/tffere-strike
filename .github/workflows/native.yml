@@ -1,0 +1,34 @@
+name: Native desktop game
+on:
+  push:
+    paths: ['native/**', '.github/workflows/native.yml']
+  workflow_dispatch:
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure C++ game
+        run: cmake -S native -B native-build -A x64
+      - name: Build release
+        run: cmake --build native-build --config Release --parallel 2
+      - name: Test gameplay
+        run: ctest --test-dir native-build -C Release --output-on-failure
+      - name: Prepare portable game
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force TffereStrike
+          Copy-Item native-build/Release/TffereStrike.exe TffereStrike/
+          Copy-Item -Recurse native-build/Release/assets TffereStrike/assets
+          Copy-Item native-build/Release/LICENSE-raylib.txt TffereStrike/
+          @'
+          Extract the entire folder and double-click TffereStrike.exe.
+          Keep assets next to the executable. No Node.js or browser is needed.
+          WASD move, mouse look/fire, 1 rifle, 2 sniper, right-click scope,
+          R reload, Space jump, Shift sprint, Escape pause, Enter deploy.
+          Windows x64 and an OpenGL 3.3 graphics driver are required.
+          '@ | Set-Content TffereStrike/READ-ME.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TffereStrike-Windows-x64
+          path: TffereStrike/
