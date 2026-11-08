@@ -1,0 +1,132 @@
+[
+  {
+    "file": "recoil-before/before-bot.txt",
+    "original_and_replay_sha256": "a059dcfaa6973e8189f57202ecb8458914564a79bd4017087a79b6f67fadaf70",
+    "identical": true
+  },
+  {
+    "file": "recoil-before/before-player.txt",
+    "original_and_replay_sha256": "d0abaac227c86579f77251df082a5ef48a5e522d6ef2816b90983a68214577fc",
+    "identical": true
+  },
+  {
+    "file": "recoil-before/evaluation-20.csv",
+    "original_and_replay_sha256": "8d374a375451a007a9beead6224a5fc15e1d1754e5a4e04234e3599a434e88f7",
+    "identical": true
+  },
+  {
+    "file": "recoil-before/config.txt",
+    "original_and_replay_sha256": "8dea5cd48379f7a3d2ac80197e4d6cc0296d129278919de7a363f2c0de1bf3f4",
+    "identical": true
+  },
+  {
+    "file": "recoil-before/after-player.txt",
+    "original_and_replay_sha256": "d0abaac227c86579f77251df082a5ef48a5e522d6ef2816b90983a68214577fc",
+    "identical": true
+  },
+  {
+    "file": "recoil-before/summary.csv",
+    "original_and_replay_sha256": "36ec9d9aedc2dfe78a6f38faa1b2137b1de57971eceffe4d6c87c33556c32f40",
+    "identical": true
+  },
+  {
+    "file": "recoil-before/after-bot.txt",
+    "original_and_replay_sha256": "a059dcfaa6973e8189f57202ecb8458914564a79bd4017087a79b6f67fadaf70",
+    "identical": true
+  },
+  {
+    "file": "recoil-before/reference-player.txt",
+    "original_and_replay_sha256": "930a9dff868695ba196c36ab84ca86b2eca209c9dca7bc2ee793687073e4a42e",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle1/before-bot.txt",
+    "original_and_replay_sha256": "a059dcfaa6973e8189f57202ecb8458914564a79bd4017087a79b6f67fadaf70",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle1/before-player.txt",
+    "original_and_replay_sha256": "d0abaac227c86579f77251df082a5ef48a5e522d6ef2816b90983a68214577fc",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle1/training-100.csv",
+    "original_and_replay_sha256": "2f62160dafbc59411b4f43fb7d977e11e871e3e6248c9223845b720753c2f4ca",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle1/evaluation-20.csv",
+    "original_and_replay_sha256": "8d374a375451a007a9beead6224a5fc15e1d1754e5a4e04234e3599a434e88f7",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle1/config.txt",
+    "original_and_replay_sha256": "8dea5cd48379f7a3d2ac80197e4d6cc0296d129278919de7a363f2c0de1bf3f4",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle1/after-player.txt",
+    "original_and_replay_sha256": "b047a477ac9ac5b5a9eda25bcd2a747447087e88fcfcb6b4bbce32e3dd7a8349",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle1/summary.csv",
+    "original_and_replay_sha256": "589d1ba91c08888543ad305fe7a351d6168912df1439ce23070713ba55600193",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle1/after-bot.txt",
+    "original_and_replay_sha256": "3d012ca68f01f778acd1f21b0646cffc09155a4b923556fbd71891a50b1d5fab",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle1/reference-player.txt",
+    "original_and_replay_sha256": "930a9dff868695ba196c36ab84ca86b2eca209c9dca7bc2ee793687073e4a42e",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle2/before-bot.txt",
+    "original_and_replay_sha256": "3d012ca68f01f778acd1f21b0646cffc09155a4b923556fbd71891a50b1d5fab",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle2/before-player.txt",
+    "original_and_replay_sha256": "b047a477ac9ac5b5a9eda25bcd2a747447087e88fcfcb6b4bbce32e3dd7a8349",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle2/training-100.csv",
+    "original_and_replay_sha256": "35af14ce8ea5891e9cd27b84b72df32a4d1e2a361e6431f25e35c4cedf3d91d9",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle2/evaluation-20.csv",
+    "original_and_replay_sha256": "8d374a375451a007a9beead6224a5fc15e1d1754e5a4e04234e3599a434e88f7",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle2/config.txt",
+    "original_and_replay_sha256": "8dea5cd48379f7a3d2ac80197e4d6cc0296d129278919de7a363f2c0de1bf3f4",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle2/after-player.txt",
+    "original_and_replay_sha256": "b83f3419028c7944c6c3a313ab709632f157301ebbb2fef1c2b062779d8676c2",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle2/summary.csv",
+    "original_and_replay_sha256": "5ac678fb4ae2721ba697a6602dd0c82867c631cae6b3b5b00e75b6a51b690435",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle2/after-bot.txt",
+    "original_and_replay_sha256": "b9cdffa4db74fb8db4bcca8d9ad6940ca10a1cb809920b9e982607b587e7218e",
+    "identical": true
+  },
+  {
+    "file": "recoil-cycle2/reference-player.txt",
+    "original_and_replay_sha256": "930a9dff868695ba196c36ab84ca86b2eca209c9dca7bc2ee793687073e4a42e",
+    "identical": true
+  }
+]

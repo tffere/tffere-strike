@@ -70,7 +70,7 @@ int main() {
             g.step(.05f);check(hasEvent(g,EventType::BotShot)&&g.player.health==64,"nearby bot refused to fire");
         }},
         {"trained short-range policy cannot oscillate rifle and sniper", [] {
-            auto file=std::filesystem::path(__FILE__).parent_path()/"assets"/"bot-policy-after-100.txt";
+            auto file=std::filesystem::path(__FILE__).parent_path()/"assets"/"bot-policy-trained.txt";
             Game g;g.useBotPolicy(tactics::Policy::load(file.string()));g.start();quiet(g);
             g.obstacles.clear();g.player.pos={0,-8};auto& b=g.bots[0];b=Bot{};b.cooldown=0;
             int switches=0,shots=0;for(int i=0;i<100;i++){
@@ -96,8 +96,8 @@ int main() {
         {"both versioned bot policies load and differ", [] {
             auto folder=std::filesystem::path(__FILE__).parent_path()/"assets";
             auto prior=tactics::Policy::load((folder/"bot-policy.txt").string());
-            auto after=tactics::Policy::load((folder/"bot-policy-after-100.txt").string());
-            check(prior.q!=after.q,"100-round policy did not change");
+            auto after=tactics::Policy::load((folder/"bot-policy-trained.txt").string());
+            check(prior.q!=after.q,"200-round policy did not change");
             Game g;g.useBotPolicy(after);g.start();check(g.trainedBots,"candidate policy not activated");
         }},
         {"shipped policy loads and drives autonomous decisions", [] {
@@ -425,6 +425,7 @@ int main() {
             game.shoot();
             check(bot.hp == 25 && game.lastShot.headshot, "rifle head damage wrong");
             game.selectWeapon(WeaponId::AW9);
+            game.player.switchRemaining=0; // This fixture isolates damage after the draw completes.
             aim(game, bot.pos);
             game.shoot();
             check(bot.hp == 0 && game.lastShot.damage == 125, "sniper body damage wrong");
@@ -454,7 +455,8 @@ int main() {
             Input scope; scope.toggleScope = true;
             game.step(0, scope);
             check(game.scoped, "sniper scope did not activate");
-            game.shoot();
+            check(!game.shoot(), "player fired during switch delay");
+            game.step(.2f);game.step(.2f);game.shoot();
             check(game.weapon().ammo == 4, "sniper ammo wrong");
             check(game.reload() && !game.scoped, "sniper reload must exit scope");
             game.selectWeapon(WeaponId::AR7);
@@ -489,6 +491,7 @@ int main() {
         {"six eliminations win and restart restores all round state", [] {
             Game game; game.start(); game.obstacles.clear();
             game.selectWeapon(WeaponId::AW9);
+            game.player.switchRemaining=0; // Begin with the sniper ready.
             for (std::size_t i = 0; i < game.bots.size(); ++i) game.bots[i].pos = {static_cast<float>(i) * 2 - 5, 5};
             for (auto& bot : game.bots) {
                 game.weapon().ammo = 5; game.weapon().cooldown = 0;

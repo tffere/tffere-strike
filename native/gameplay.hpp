@@ -107,7 +107,7 @@ struct Player {
     Vec2 pos{0, 18};
     float y = EYE_HEIGHT, yaw = 0, pitch = 0, verticalVelocity = 0;
     int health = 100;
-    float crouch = 0, speed=0,recoilPitch=0,recoilYaw=0;
+    float crouch = 0, speed=0,recoilPitch=0,recoilYaw=0,switchRemaining=0;
     float eyeHeight() const { return EYE_HEIGHT - CROUCH_DROP*crouch; }
 };
 enum class Awareness { Patrol, Investigate, Chase, Search };
@@ -437,6 +437,7 @@ public:
             events.push_back({EventType::ScopeChanged});
         }
         selectedWeapon = id;
+        player.switchRemaining=.35f;
         events.push_back({EventType::WeaponSwitched, -1, id});
     }
     bool reload() {
@@ -449,7 +450,7 @@ public:
         return true;
     }
     bool shoot() {
-        if (mode != Mode::Playing) return false;
+        if (mode != Mode::Playing || player.switchRemaining>0) return false;
         if (!weapon().fire()) {
             if (weapon().ammo == 0 && weapon().cooldown <= 0 && weapon().reloadRemaining <= 0) {
                 events.push_back({EventType::EmptyClick, -1, selectedWeapon});
@@ -514,6 +515,7 @@ public:
         if (mode != Mode::Playing) return;
         const float dt = std::clamp(seconds, 0.f, .25f);
         elapsed += dt;
+        player.switchRemaining=std::max(0.f,player.switchRemaining-dt);
         player.recoilPitch*=std::exp(-dt*8);player.recoilYaw*=std::exp(-dt*8);
         timeLeft = std::max(0.f, timeLeft - dt);
         muzzleFlash = std::max(0.f, muzzleFlash - dt);
@@ -768,7 +770,7 @@ private:
             const Vec2 before = bot.pos;
             if (advance && distance(bot.pos,goal) > (trainedBots?.5f:(visible?6.f:.5f))) {
                 const float length = std::hypot(gx, gz);
-                const float pace = (bot.memory>0 && distance(bot.pos,bot.searchCenter)>12 && bot.crouch<.1f ? SPRINT_SPEED : trainedBots&&visible?2.f:WALK_SPEED) * (1.f - .5f * bot.crouch);
+                const float pace = (bot.memory>0 && distance(bot.pos,bot.searchCenter)>12 && bot.crouch<.1f ? SPRINT_SPEED : trainedBots&&visible?2.f:WALK_SPEED-2.f*bot.crouch);
                 const float amount = std::min(length, pace * dt);
                 if (length > .001f) moveActor(bot.pos, gx / length * amount, gz / length * amount, obstacles, PLAYER_RADIUS);
             }
