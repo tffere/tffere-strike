@@ -24,8 +24,10 @@ struct Prop{Vector3 pos,scale;Color tint;int material=-1;float angle=0;int shape
 struct Decal{Texture2D image;Vector3 pos;float width,height;};
 struct Tracer{Vector3 start,end;float life;};
 
+#include "arch_mesh.hpp"
+
 struct Graphics{
-    Model cube{},ball{},tube{};
+    Model cube{},ball{},tube{},archModel{};
     Shader lit{};
     RenderTexture2D shadow{};
     Camera3D light{{-32,48,25},{0,0,0},{0,1,0},64,CAMERA_ORTHOGRAPHIC};
@@ -33,18 +35,18 @@ struct Graphics{
     std::vector<Prop> props;
     std::vector<Decal> signs;
     Font font{};
-    int locLight,locEye,locFlash,locPower,locShadow,locVM,locTex;
+    int locLight,locEye,locFlash,locPower,locShadow,locVM,locTex,locBlend,locFog;
     bool shadowPass=false,shadows=true;
     std::string assetDir;
     Graphics(const std::string& assets):assetDir(assets){
-        cube=LoadModelFromMesh(GenMeshCube(1,1,1));
+        cube=LoadModelFromMesh(GenMeshCube(1,1,1));archModel=LoadModelFromMesh(makeArchMesh());
         ball=LoadModelFromMesh(GenMeshSphere(1,16,24));
         tube=LoadModelFromMesh(GenMeshCylinder(1,1,16));
         lit=LoadShaderFromMemory(LIT_VERTEX,LIT_FRAGMENT);
         if(!IsShaderValid(lit)||lit.id==rlGetShaderIdDefault())throw std::runtime_error("Lighting shader failed to compile");
         locLight=GetShaderLocation(lit,"lightVP");locEye=GetShaderLocation(lit,"eye");
         locFlash=GetShaderLocation(lit,"flashPosition");locPower=GetShaderLocation(lit,"flashPower");
-        locShadow=GetShaderLocation(lit,"useShadow");locVM=GetShaderLocation(lit,"viewModel");locTex=GetShaderLocation(lit,"textured");
+        locShadow=GetShaderLocation(lit,"useShadow");locVM=GetShaderLocation(lit,"viewModel");locTex=GetShaderLocation(lit,"textured");locBlend=GetShaderLocation(lit,"textureBlend");locFog=GetShaderLocation(lit,"fogDensity");
         font=LoadFontEx((assetDir+"/interface.ttf").c_str(),64,nullptr,0);
         SetTextureFilter(font.texture,TEXTURE_FILTER_BILINEAR);
         Image atlas=LoadImage((assetDir+"/materials.png").c_str());
@@ -56,6 +58,23 @@ struct Graphics{
             UnloadImage(part);
         }
         UnloadImage(atlas);
+        // Large, staggered limestone slabs replace the original gravel surface.
+        Image paving=GenImageColor(512,512,{119,116,104,255});
+        std::mt19937 stoneRng(141);
+        for(int row=0;row<8;row++)for(int col=-1;col<5;col++){
+            int x=col*128+(row%2)*64,y=row*64;
+            int variation=int(stoneRng()%15)-7;
+            Color stone{(unsigned char)(186+variation),(unsigned char)(180+variation),(unsigned char)(160+variation),255};
+            ImageDrawRectangle(&paving,x+2,y+2,125,61,stone);
+            ImageDrawRectangle(&paving,x+3,y+3,123,1,{205,200,179,255});
+        }
+        for(int y=0;y<512;y++)for(int x=0;x<512;x++){
+            Color c=GetImageColor(paving,x,y);int grain=int(stoneRng()%9)-4;
+            c.r=(unsigned char)std::clamp(int(c.r)+grain,0,255);c.g=(unsigned char)std::clamp(int(c.g)+grain,0,255);c.b=(unsigned char)std::clamp(int(c.b)+grain,0,255);
+            ImageDrawPixel(&paving,x,y,c);
+        }
+        UnloadTexture(textures[1]);textures[1]=LoadTextureFromImage(paving);UnloadImage(paving);
+        GenTextureMipmaps(&textures[1]);SetTextureFilter(textures[1],TEXTURE_FILTER_ANISOTROPIC_8X);SetTextureWrap(textures[1],TEXTURE_WRAP_REPEAT);
         shadow.id=rlLoadFramebuffer();shadow.texture.width=shadow.texture.height=2048;
         rlEnableFramebuffer(shadow.id);
         shadow.depth.id=rlLoadTextureDepth(2048,2048,false);
@@ -67,7 +86,7 @@ struct Graphics{
     ~Graphics(){
         for(auto t:textures)UnloadTexture(t);
         for(auto d:signs)UnloadTexture(d.image);
-        UnloadFont(font);UnloadModel(cube);UnloadModel(ball);UnloadModel(tube);
+        UnloadFont(font);UnloadModel(cube);UnloadModel(ball);UnloadModel(tube);UnloadModel(archModel);
         rlUnloadFramebuffer(shadow.id);UnloadShader(lit);
     }
     void uniforms(Vector3 eye,Vector3 flash,float power,bool vm=false){
@@ -84,7 +103,11 @@ struct Graphics{
         model.materials[0].shader=shadowPass?Shader{rlGetShaderIdDefault(),rlGetShaderLocsDefault()}:lit;
         // Shader values are applied before each mesh; DrawModel handles transforms.
         int textured=texture>=0?1:0;
-        if(!shadowPass)SetShaderValue(lit,locTex,&textured,SHADER_UNIFORM_INT);
+        if(!shadowPass){
+            SetShaderValue(lit,locTex,&textured,SHADER_UNIFORM_INT);
+            float blend=texture==0?.42f:texture==1?.48f:1.f;
+            SetShaderValue(lit,locBlend,&blend,SHADER_UNIFORM_FLOAT);
+        }
         model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture=texture>=0?textures[texture]:Texture2D{rlGetTextureIdDefault(),1,1,1,7};
         DrawModelEx(model,pos,axis,angle,size,color);
     }
@@ -98,14 +121,21 @@ struct Graphics{
         mesh(tube,from,{radius,Vector3Length(delta),radius},c,-1,axis,angle);
     }
     void add(float x,float y,float z,float w,float h,float d,Color c,int tex=-1,float angle=0){props.push_back({{x,y,z},{w,h,d},c,tex,angle,0});}
+    void arch(float x,float y,float z,float halfWidth,float rise,float depth,Color c){props.push_back({{x,y,z},{halfWidth,rise,depth},c,-1,0,3});}
     void pipe(Vector3 a,Vector3 b,float radius,Color c){
         // Store endpoints for persistent tubular details.
         props.push_back({a,b,c,-1,radius,1});
     }
     void label(std::string text,std::string sub,Vector3 pos,float width,float height,Color bg={184,163,137,255}){
-        Image im=GenImageColor(1024,384,bg);
-        ImageDrawTextEx(&im,font,text.c_str(),{40,48},90,2,{49,65,67,255});
-        ImageDrawTextEx(&im,font,sub.c_str(),{42,208},37,2,{156,81,44,255});
+        int widthPx=768,heightPx=std::clamp(int(768*height/width),128,1024);
+        Image im=GenImageColor(widthPx,heightPx,bg);
+        float primarySize=std::min(heightPx*.60f,widthPx*.88f/std::max(.5f,MeasureTextEx(font,text.c_str(),1,0).x));
+        Vector2 measure=MeasureTextEx(font,text.c_str(),primarySize,1);
+        Color ink=int(bg.r)+bg.g+bg.b<450?Color{238,225,191,255}:Color{49,65,67,255};
+        ImageDrawTextEx(&im,font,text.c_str(),{(widthPx-measure.x)/2,heightPx*.08f},primarySize,1,ink);
+        float subSize=std::min(heightPx*.15f,widthPx*.88f/std::max(.5f,MeasureTextEx(font,sub.c_str(),1,0).x));
+        Vector2 small=MeasureTextEx(font,sub.c_str(),subSize,1);
+        ImageDrawTextEx(&im,font,sub.c_str(),{(widthPx-small.x)/2,heightPx*.78f},subSize,1,ink);
         Texture2D t=LoadTextureFromImage(im);UnloadImage(im);SetTextureFilter(t,TEXTURE_FILTER_BILINEAR);
         signs.push_back({t,pos,width,height});
     }
@@ -206,6 +236,7 @@ struct Graphics{
         for(auto& p:props){
             if(p.shape==1)link(p.pos,p.scale,p.angle,p.tint);
             else if(p.shape==2)sphere(p.pos,p.scale,p.tint);
+            else if(p.shape==3)mesh(archModel,p.pos,p.scale,p.tint);
             else box(p.pos,p.scale,p.tint,p.material,p.angle);
         }
         if(!shadowPass)for(auto& d:signs){
@@ -220,42 +251,12 @@ struct Graphics{
             rlEnd();rlSetTexture(0);
         }
     }
-    void bot(const strike::Bot& b,float elapsed){
-        if(!b.alive())return;
-        // Rounded articulated silhouettes, layered armour, gloves and boots.
-        rlPushMatrix();rlTranslatef(b.pos.x,0,b.pos.z);rlRotatef(b.yaw*RAD2DEG,0,1,0);
-        Color cloth{56,74,72,255},armor{34,49,48,255},webbing{94,102,78,255};
-        float gait=std::sin(elapsed*6+b.phase)*.13f;
-        for(float side:{-1.f,1.f}){
-            float z=gait*side;
-            link({side*.14f,.84f,0},{side*.15f,.46f,z},.105f,cloth);
-            link({side*.15f,.46f,z},{side*.15f,.12f,-z},.085f,cloth);
-            sphere({side*.15f,.45f,z},{.105f,.13f,.11f},armor);
-            box({side*.15f,.08f,-z-.06f},{.19f,.16f,.34f},{28,36,35,255});
-        }
-        sphere({0,1.16f,0},{.30f,.40f,.20f},cloth);
-        box({0,1.18f,-.05f},{.52f,.53f,.32f},armor);
-        box({0,.89f,0},{.51f,.08f,.32f},{41,48,40,255});
-        for(float x:{-.17f,0.f,.17f})box({x,1.11f,-.24f},{.135f,.21f,.08f},webbing);
-        for(float side:{-1.f,1.f}){
-            link({side*.31f,1.4f,0},{side*.33f,1.12f,-.2f},.095f,cloth);
-            link({side*.33f,1.12f,-.2f},{side*.14f,1.24f,-.48f},.075f,cloth);
-            sphere({side*.14f,1.24f,-.48f},{.08f,.08f,.10f},{35,41,38,255});
-            sphere({side*.32f,1.39f,0},{.11f,.10f,.14f},armor);
-        }
-        link({0,1.42f,0},{0,1.57f,0},.09f,{157,127,100,255});
-        sphere({0,1.69f,0},{.16f,.19f,.155f},{162,136,108,255});
-        sphere({0,1.77f,.015f},{.19f,.15f,.19f},{48,66,64,255});
-        box({0,1.71f,-.145f},{.27f,.065f,.07f},{21,35,37,255});
-        box({0,1.65f,-.16f},{.16f,.09f,.045f},{73,82,69,255});
-        box({.32f,1.38f,-.02f},{.018f,.13f,.13f},{199,145,59,255});
-        box({.04f,1.24f,-.49f},{.10f,.13f,.42f},{30,35,35,255});
-        link({.04f,1.26f,-.65f},{.04f,1.26f,-.96f},.025f,{24,29,29,255});
-        box({.04f,1.1f,-.46f},{.07f,.17f,.13f},{37,42,39,255});
-        if(b.shotFlash>0&&!shadowPass)sphere({.04f,1.26f,-1.0f},{.06f,.06f,.12f},{255,208,99,255});
-        rlPopMatrix();
-    }
+
 };
+
+#include "desert_map.hpp"
+#include "bot_renderer.hpp"
+#include "weapon_renderer.hpp"
 
 struct Audio{
     bool ready=false,muted=false;std::array<Sound,7> sounds{};
@@ -288,86 +289,30 @@ static void text(Font f,const char* str,float x,float y,float size,Color c,float
 static void center(Font f,const char* str,float x,float y,float size,Color c){text(f,str,x-MeasureTextEx(f,str,size,1).x/2,y,size,c);}
 static void panel(Rectangle r,Color c=Color{15,22,28,220}){DrawRectangleRounded(r,.06f,10,c);DrawRectangleRoundedLinesEx(r,.06f,10,1,{85,102,107,90});}
 
-static void weapon(Graphics& g,bool sniper,float elapsed,float recoil,float reload){
-    Color metal{50,59,63,255},dark{25,31,34,255},steel{99,112,116,255},olive{111,112,78,255},glove{49,56,47,255};
-    float sway=std::sin(elapsed*1.8f)*.0025f;
-    rlPushMatrix();rlTranslatef(.27f+sway,-.26f-reload*.32f,-.48f+recoil*.08f);rlRotatef(-recoil*5+reload*24,1,0,0);rlRotatef(reload*20,0,0,1);
-    // Forearms and shaped gloves anchor the weapon naturally in view.
-    g.link({.08f,-.28f,.38f},{.02f,-.10f,.09f},.073f,{85,96,71,255});
-    g.sphere({.015f,-.08f,.055f},{.065f,.072f,.09f},glove);
-    g.link({-.29f,-.24f,.27f},{-.09f,-.065f,-.37f},.064f,{85,96,71,255});
-    g.sphere({-.07f,-.06f,-.35f},{.065f,.06f,.095f},glove);
-    if(sniper){
-        g.box({0,0,0},{.095f,.10f,.49f},metal);
-        g.box({0,-.045f,-.28f},{.115f,.075f,.42f},olive);
-        g.box({0,-.035f,.27f},{.12f,.15f,.28f},olive);
-        g.box({0,.035f,.20f},{.13f,.035f,.19f},olive);
-        g.box({0,-.15f,.04f},{.07f,.17f,.11f},dark, -1,-12);
-        g.box({0,-.13f,-.14f},{.075f,.13f,.14f},dark);
-        g.link({0,.02f,-.44f},{0,.02f,-1.02f},.023f,dark);
-        g.link({0,.02f,-1.02f},{0,.02f,-1.12f},.036f,metal);
-        // Scope tube with mount rings, adjustment turrets and cyan glass.
-        g.link({0,.147f,.13f},{0,.147f,-.37f},.041f,dark);
-        for(float z:{-.22f,.04f}){
-            g.box({0,.078f,z},{.065f,.085f,.06f},metal);
-            g.link({0,.147f,z-.018f},{0,.147f,z+.018f},.052f,steel);
-        }
-        g.link({0,.147f,-.33f},{0,.147f,-.46f},.069f,dark);
-        g.link({0,.147f,.10f},{0,.147f,.19f},.056f,metal);
-        g.link({0,.147f,.19f},{0,.147f,.192f},.048f,{34,100,112,255});
-        g.link({0,.147f,-.46f},{0,.147f,-.463f},.061f,{27,78,89,255});
-        g.link({0,.18f,-.08f},{0,.215f,-.08f},.025f,steel);
-        g.link({.02f,.147f,-.08f},{.065f,.147f,-.08f},.024f,steel);
-        g.link({.04f,.01f,.06f},{.105f,-.035f,.11f},.014f,steel);
-        g.sphere({.105f,-.035f,.11f},{.025f,.025f,.025f},dark);
-        // Folded bipod and vented fore-end.
-        for(float side:{-1.f,1.f})g.link({side*.047f,-.02f,-.40f},{side*.06f,-.05f,-.69f},.012f,metal);
-        for(int i=0;i<5;i++)g.box({-.059f,-.03f,-.22f-i*.035f},{.006f,.025f,.018f},dark);
-    }else{
-        g.box({0,0,0},{.105f,.14f,.39f},metal);
-        g.box({0,.065f,-.05f},{.07f,.045f,.43f},dark);
-        g.box({0,-.03f,-.30f},{.115f,.12f,.30f},metal);
-        g.link({0,.01f,-.43f},{0,.01f,-.83f},.020f,dark);
-        g.link({0,.01f,-.83f},{0,.01f,-.91f},.030f,steel);
-        g.box({0,-.04f,.29f},{.10f,.12f,.24f},dark);
-        g.box({0,-.03f,.43f},{.13f,.18f,.045f},dark);
-        g.box({0,-.15f,.06f},{.075f,.19f,.105f},dark,-1,-12);
-        g.box({0,-.17f,-.12f},{.080f,.25f,.12f},metal,-1,9);
-        for(int i=0;i<5;i++)g.box({-.042f,-.10f-i*.035f,-.12f},{.005f,.012f,.09f},steel);
-        for(int i=0;i<13;i++)g.box({0,.101f,.12f-i*.040f},{.09f,.010f,.018f},steel);
-        for(float side:{-1.f,1.f})for(int i=0;i<6;i++)g.box({side*.059f,.003f,-.20f-i*.035f},{.008f,.052f,.019f},dark);
-        g.box({0,.135f,-.67f},{.017f,.14f,.025f},dark);
-        g.box({-.031f,.12f,.10f},{.018f,.08f,.04f},dark);
-        g.box({.031f,.12f,.10f},{.018f,.08f,.04f},dark);
-        g.box({0,.16f,.10f},{.078f,.015f,.04f},dark);
-        g.link({-.026f,.02f,-.67f},{0,.12f,-.67f},.009f,dark);
-        g.link({.026f,.02f,-.67f},{0,.12f,-.67f},.009f,dark);
-        g.box({.057f,.025f,0},{.012f,.045f,.12f},{16,24,24,255});
-        g.link({.045f,.015f,.08f},{.082f,.035f,.08f},.009f,steel);
-        g.link({-.047f,-.08f,.08f},{-.047f,-.19f,.01f},.009f,steel);
-    }
-    if(recoil>.45f){
-        Vector3 p{0,.014f,sniper?-1.14f:-.93f};
-        g.sphere(p,{.045f,.045f,.10f},{255,211,119,255});
-        g.link(p,{0,.014f,p.z-.17f},.015f,{255,241,188,255});
-    }
-    rlPopMatrix();
-}
 
 int main(int argc,char** argv){
-    bool smoke=false,capture=false;
-    for(int i=1;i<argc;i++){if(!std::strcmp(argv[i],"--smoke-test"))smoke=true;if(!std::strcmp(argv[i],"--capture"))capture=true;}
+    bool smoke=false,capture=false,mapCapture=false,botCapture=false;int sectorCapture=0;
+    for(int i=1;i<argc;i++){if(!std::strcmp(argv[i],"--smoke-test"))smoke=true;if(!std::strcmp(argv[i],"--capture"))capture=true;if(!std::strcmp(argv[i],"--capture-nw")){capture=true;sectorCapture=4;}if(!std::strcmp(argv[i],"--capture-ne")){capture=true;sectorCapture=5;}if(!std::strcmp(argv[i],"--capture-sw")){capture=true;sectorCapture=6;}if(!std::strcmp(argv[i],"--capture-se")){capture=true;sectorCapture=7;}if(!std::strcmp(argv[i],"--capture-long")){capture=true;sectorCapture=1;}if(!std::strcmp(argv[i],"--capture-west")){capture=true;sectorCapture=2;}if(!std::strcmp(argv[i],"--capture-court")){capture=true;sectorCapture=3;}if(!std::strcmp(argv[i],"--bot-capture")){botCapture=true;capture=true;}if(!std::strcmp(argv[i],"--map-capture")){mapCapture=true;capture=true;}}
     std::filesystem::path base=std::filesystem::absolute(argv[0]).parent_path();
     SetTraceLogLevel(LOG_WARNING);SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT|FLAG_VSYNC_HINT);
-    InitWindow(1280,720,"Tffere Strike | Native C++");base=GetApplicationDirectory();SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
+    InitWindow(1280,720,"Tffere Strike v1.1 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
     int exitCode=0;
     try{
         std::filesystem::path assets=base/"assets";
         if(!std::filesystem::exists(assets/"materials.png"))assets=std::filesystem::path(GetWorkingDirectory())/"native/assets";
-        Graphics gfx(assets.string());strike::Game game;gfx.build(game);Audio audio(!smoke);
+        Graphics gfx(assets.string());strike::Game game(true);buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
+        for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--no-shadows"))gfx.shadows=false;Audio audio(!smoke);
         float recoil=0,scope=0,walk=0,stepTimer=0,switchAnim=0,hitFade=0;
         WeaponId previous=WeaponId::AR7;int frames=0;bool debug=false,blockFire=false;std::vector<Tracer> tracers;
         if(smoke||capture)game.start();
+        if(sectorCapture==1)game.player.pos={25,21};
+        if(sectorCapture==2)game.player.pos={-25,17};
+        if(sectorCapture==3)game.player.pos={26,-15};
+        if(sectorCapture==4){game.player.pos={-27,-27};game.player.yaw=PI;}
+        if(sectorCapture==5){game.player.pos={27,-27};game.player.yaw=PI;}
+        if(sectorCapture==6)game.player.pos={-27,27};
+        if(sectorCapture==7)game.player.pos={27,27};
+        if(botCapture){game.bots[0].pos={.65f,23.1f};for(int i=1;i<6;i++)game.bots[i].hp=0;}
         while(!WindowShouldClose()){
             float dt=std::min(.05f,GetFrameTime());if(smoke)dt=1.f/60;
             float sw=float(GetScreenWidth()),sh=float(GetScreenHeight()),ui=std::min(sw/1280.f,sh/720.f);
@@ -391,7 +336,7 @@ int main(int argc,char** argv){
             if(game.mode!=Mode::Playing&&IsKeyPressed(KEY_ESCAPE)){if(game.mode==Mode::Paused)input.start=true;else break;}
             if(capture)input={};
             if(smoke){input={};if(frames<35)input.forward=true;if(frames==40)input.selectAW9=true;if(frames==48)input.toggleScope=true;if(frames==80)input.fire=true;}
-            Mode oldMode=game.mode;game.step(dt,input);
+            Mode oldMode=game.mode;game.step(dt,input);botArt.update(game,dt);
             if(game.mode==Mode::Playing&&oldMode!=Mode::Playing&&!smoke){DisableCursor();blockFire=true;}
             if(game.mode!=Mode::Playing&&oldMode==Mode::Playing)EnableCursor();
             if(game.selectedWeapon!=previous){switchAnim=1;previous=game.selectedWeapon;}
@@ -417,28 +362,31 @@ int main(int argc,char** argv){
             float bob=game.mode==Mode::Playing&&(input.forward||input.backward||input.left||input.right)?std::sin(walk)*.025f*(1-scope):0;
             Vector3 eye{game.player.pos.x,game.player.y+bob,game.player.pos.z};
             Vector3 direction=V(strike::viewDirection(game.player.yaw,game.player.pitch));
-            Camera3D camera{eye,Vector3Add(eye,direction),{0,1,0},76-scope*56,CAMERA_PERSPECTIVE};
+            Camera3D camera{eye,Vector3Add(eye,direction),{0,1,0},68-scope*48,CAMERA_PERSPECTIVE};
             if(game.mode==Mode::Ready){camera.position={.3f,2.1f,18};camera.target={0,2,-8};}
+            if(mapCapture){camera.position={52,68,60};camera.target={0,0,0};camera.fovy=70;camera.projection=CAMERA_ORTHOGRAPHIC;}
+            if(botCapture){camera.target={.4f,1.25f,23.1f};camera.fovy=60;}
             // Shadow geometry is the same scene and bots used for the colour pass.
             if(gfx.shadows){
                 gfx.shadowPass=true;BeginTextureMode(gfx.shadow);ClearBackground(WHITE);BeginMode3D(gfx.light);
                 Matrix lightView=rlGetMatrixModelview(),lightProjection=rlGetMatrixProjection();
                 SetShaderValueMatrix(gfx.lit,gfx.locLight,MatrixMultiply(lightView,lightProjection));
-                gfx.world();for(const auto& b:game.bots)gfx.bot(b,game.elapsed);
+                gfx.world();for(int i=0;i<6;i++)botArt.draw(gfx,game.bots[i],i,game.elapsed);
                 EndMode3D();EndTextureMode();gfx.shadowPass=false;
             }
             BeginDrawing();ClearBackground({160,183,194,255});
-            DrawRectangleGradientV(0,0,int(sw),int(sh),{99,135,159,255},{205,205,185,255});
+            DrawRectangleGradientV(0,0,int(sw),int(sh),{145,175,183,255},{218,220,204,255});
             BeginMode3D(camera);gfx.uniforms(camera.position,eye,game.muzzleFlash>0?1.2f:0);
-            gfx.world();for(const auto& b:game.bots)gfx.bot(b,game.elapsed);
+            float fogDensity=mapCapture?.001f:.006f;SetShaderValue(gfx.lit,gfx.locFog,&fogDensity,SHADER_UNIFORM_FLOAT);
+            gfx.world();for(int i=0;i<6;i++)botArt.draw(gfx,game.bots[i],i,game.elapsed);
             for(auto t:tracers)DrawLine3D(t.start,t.end,{255,218,137,160});
             EndMode3D();
             // A dedicated view camera keeps the hands and weapons properly framed.
-            if(game.mode!=Mode::Ready&&scope<.98f){
+            if(game.mode!=Mode::Ready&&scope<.98f&&!mapCapture){
                 Camera3D view{{0,0,0},{0,0,-1},{0,1,0},62,CAMERA_PERSPECTIVE};
                 BeginMode3D(view);gfx.uniforms({0,0,0},{0,0,-.5f},game.muzzleFlash>0?.5f:0,true);
                 float reload=game.weapon().reloadRemaining>0?std::sin(game.weapon().reloadRemaining/game.weapon().spec.reloadSeconds*PI):0;
-                weapon(gfx,game.selectedWeapon==WeaponId::AW9,walk,recoil,std::max(reload,switchAnim));EndMode3D();
+                weaponArt.draw(gfx,game.selectedWeapon==WeaponId::AW9,walk,recoil,std::max(reload,switchAnim));EndMode3D();
             }
             if(scope>.01f){
                 float radius=std::min(sw,sh)*.47f, cx=sw/2,cy=sh/2;
@@ -453,13 +401,13 @@ int main(int argc,char** argv){
                 for(int n=-4;n<=4;n++)if(n){DrawLine(int(cx+n*radius*.12f),int(cy-4),int(cx+n*radius*.12f),int(cy+4),BLACK);DrawLine(int(cx-4),int(cy+n*radius*.12f),int(cx+4),int(cy+n*radius*.12f),BLACK);}
                 DrawCircle(int(cx),int(cy),2,{181,75,55,(unsigned char)(scope*255)});
             }
-            if(game.mode!=Mode::Ready){
+            if(game.mode!=Mode::Ready&&!mapCapture){
                 // HUD uses native vector panels and an embedded TrueType font.
                 DrawRectangleGradientV(0,0,int(sw),int(105*ui),{10,17,23,205},{10,17,23,0});
                 DrawRectangleGradientV(0,int(sh-120*ui),int(sw),int(120*ui),{10,17,23,0},{10,17,23,220});
                 text(gfx.font,"TFFERE",30*ui,24*ui,22*ui,PALE,3*ui);text(gfx.font,"STRIKE",139*ui,24*ui,22*ui,SAND,3*ui);
                 text(gfx.font,"NATIVE / TACTICAL TRAINING",31*ui,53*ui,9*ui,{161,178,183,255},2*ui);
-                center(gfx.font,"DEPOT / SECTOR 07",sw/2,26*ui,11*ui,SAND);
+                center(gfx.font,"SANDSTONE / OLD QUARTER",sw/2,26*ui,11*ui,SAND);
                 center(gfx.font,"ELIMINATE THE PATROL",sw/2,48*ui,15*ui,PALE);
                 int seconds=std::max(0,int(game.timeLeft));
                 text(gfx.font,TextFormat("%02d:%02d",seconds/60,seconds%60),sw-115*ui,28*ui,29*ui,game.timeLeft<30?Color{231,120,95,255}:PALE);
@@ -482,10 +430,12 @@ int main(int argc,char** argv){
                 // Compact radar, with real collision geometry and live bot markers.
                 float rx=95*ui,ry=141*ui,rr=59*ui;
                 DrawCircle(int(rx),int(ry),rr,{16,28,31,190});DrawCircleLines(int(rx),int(ry),rr,{127,151,151,180});
-                float k=rr/25;
+                float k=rr/35;
                 for(auto o:game.obstacles)DrawRectangle(rx+(o.x-o.w/2)*k,ry+(o.z-o.d/2)*k,o.w*k,o.d*k,{104,120,114,190});
                 for(auto b:game.bots)if(b.alive())DrawCircle(int(rx+b.pos.x*k),int(ry+b.pos.z*k),2.5f*ui,{222,139,109,255});
                 Vector2 p{rx+game.player.pos.x*k,ry+game.player.pos.z*k};
+                const char* location=game.player.pos.z>20?"SOUTH SPAWN":game.player.pos.x<-20?"WEST PASSAGE":game.player.pos.x>20?"LONG ROAD":game.player.pos.z<-20?"NORTH CROSS":"MID GATE";
+                text(gfx.font,location,36*ui,207*ui,9*ui,SAND);
                 DrawCircleV(p,3*ui,SAND);DrawLineV(p,{p.x-std::sin(game.player.yaw)*9*ui,p.y-std::cos(game.player.yaw)*9*ui},PALE);
                 if(game.damageFlash>0)DrawRectangle(0,0,int(sw),int(sh),{150,35,24,(unsigned char)(std::min(.22f,game.damageFlash)*255)});
                 if(audio.muted)text(gfx.font,"AUDIO MUTED / M",sw-160*ui,78*ui,10*ui,SAND);
@@ -497,9 +447,9 @@ int main(int argc,char** argv){
                 text(gfx.font,"TFFERE",card.x+35*ui,card.y+78*ui,60*ui,PALE,4*ui);
                 text(gfx.font,"STRIKE",card.x+35*ui,card.y+142*ui,60*ui,SAND,4*ui);
                 DrawRectangle(card.x+39*ui,card.y+222*ui,54*ui,2*ui,SAND);
-                const char* title=game.mode==Mode::Ready?"DEPOT / SECTOR 07":game.mode==Mode::Paused?"MISSION PAUSED":game.mode==Mode::Won?"DEPOT SECURED":"MISSION FAILED";
+                const char* title=game.mode==Mode::Ready?"SANDSTONE / OLD QUARTER":game.mode==Mode::Paused?"MISSION PAUSED":game.mode==Mode::Won?"DEPOT SECURED":"MISSION FAILED";
                 text(gfx.font,title,card.x+39*ui,card.y+248*ui,17*ui,PALE,2*ui);
-                const char* copy=game.mode==Mode::Ready?"Six patrol units. One industrial courtyard.":game.mode==Mode::Paused?"Your round is paused. Resume when ready.":game.mode==Mode::Won?"All patrol units eliminated. Good work.":"Change lanes, use cover, and try again.";
+                const char* copy=game.mode==Mode::Ready?"Six patrol units. Three routes. One old quarter.":game.mode==Mode::Paused?"Your round is paused. Resume when ready.":game.mode==Mode::Won?"All patrol units eliminated. Good work.":"Change lanes, use cover, and try again.";
                 text(gfx.font,copy,card.x+39*ui,card.y+283*ui,14*ui,{166,185,192,255});
                 bool hover=CheckCollisionPointRec(GetMousePosition(),playButton);
                 DrawRectangleRec(playButton,hover?Color{232,195,135,255}:SAND);
@@ -515,7 +465,7 @@ int main(int argc,char** argv){
             if((smoke&&frames==110)||(capture&&frames==3)){
                 TakeScreenshot((base/"native-gameplay.png").string().c_str());
                 if(smoke){
-                    if(!IsWindowReady()||!IsShaderValid(gfx.lit)||game.player.pos.z>=18||game.selectedWeapon!=WeaponId::AW9||game.weapon().ammo!=4)exitCode=2;
+                    if(!IsWindowReady()||!IsShaderValid(gfx.lit)||game.player.pos.z>=strike::DESERT_PLAYER_SPAWN.z||game.selectedWeapon!=WeaponId::AW9||game.weapon().ammo!=4)exitCode=2;
                     std::printf("NATIVE SMOKE %s: frame rendering, movement, sniper selection, zoom, shot; %d props\n",exitCode?"FAIL":"PASS",int(gfx.props.size()));
                 }
                 break;

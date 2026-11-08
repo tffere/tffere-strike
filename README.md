@@ -1,15 +1,22 @@
-# Tffere Strike — Native C++
+# Tffere Strike — Native C++ v1.1
 
-A standalone Windows desktop FPS written in C++17 with raylib. Play against six bots in an industrial courtyard, choose an AR-7 rifle or AW-9 sniper, use cover, and clear the depot before the round ends.
+A standalone Windows desktop FPS written in C++17 with raylib. Play against six bots in a connected desert quarter, choose an AR-7 rifle or AW-9 sniper, use cover, and clear the depot before the round ends.
 
 ## Download and play on Windows
 
-1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-Windows-x64.zip).
+1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.1-Windows-x64.zip).
 2. Right-click the ZIP and select **Extract All**. Open the extracted `TffereStrike` folder.
 3. Double-click **TffereStrike.exe**. Keep its `assets` folder beside it.
 4. Click **Deploy into Depot**, or press **Enter**.
 
 No Node.js, npm, Python, browser, or development tools are needed to play. Requires Windows 10/11 x64 with an OpenGL 3.3-capable graphics driver. Extract the whole ZIP; do not run the executable from inside the archive. The executable is not digitally signed.
+
+## Keep both versions
+
+- [v1.0: original depot](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.0-Windows-x64.zip)
+- [v1.1: Sandstone desert map and revised characters](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.1-Windows-x64.zip)
+
+Extract each version into a separate folder. The `v1.0` and `v1.1` Git tags preserve their source; `upgrade-desert-map` records the upgrade work. Neither download requires installing the other.
 
 ## Controls
 
@@ -32,8 +39,9 @@ No Node.js, npm, Python, browser, or development tools are needed to play. Requi
 
 ## Included
 
-- Textured courtyard, warehouses, freight containers, crates, catwalk, radio mast and directional shadows.
-- Original rounded, articulated bot models and detailed procedural rifle/sniper models with hands, recoil and reload movement.
+- Original desert quarter with connected mid, long-road and covered-passage routes, two courts, sandstone façades, shop entrances, arches, shutters, awnings, palms and cover. Directional shadows and restrained material textures keep the routes readable.
+- Revised human-proportioned patrol models with shaped faces, helmets, goggles, tactical equipment and camouflage. Distance-driven alternating strides, bent knees, breathing, smooth turning, hit reactions and animated falls replace the original rigid patrol pose.
+- Chamfered rifle/sniper models with compact sights, layered rails, scope/bolt detail, fitted black gloves and shaped bare forearms, plus recoil/reload movement.
 - Animated sniper zoom and reticle, separate ammunition/reload state, and distinct fire rates and damage.
 - Synthesized firing, reload, hit and footstep sounds. A missing audio device does not prevent play.
 - Six bots with cover-aware vision/shooting and deterministic navigation around obstacles.
@@ -42,6 +50,10 @@ No Node.js, npm, Python, browser, or development tools are needed to play. Requi
 This is a compact single-player game with stylized original models, not a recreation of Counter-Strike or the earlier generated concept artwork. There is no multiplayer, matchmaking, campaign, or advanced character animation rig. All screenshots below come from the executable.
 
 ![Actual native gameplay](docs/native-gameplay.png)
+
+![Actual long-road view](docs/native-long-road.png)
+
+![Actual map overview](docs/native-map-overview.png)
 
 ## Source and builds
 
@@ -73,7 +85,7 @@ python3 native/build.py --platform windows --zig /path/to/zig --package
 
 ## Validation
 
-- 18 gameplay cases cover movement, swept collision, jumping, bullets and cover, rifle/sniper behavior, scope, pause, navigation, bot combat, rounds and determinism.
+- 20 gameplay cases cover movement, swept collision, jumping, bullets and cover, rifle/sniper behavior, scope, pause, navigation, bot combat, rounds and determinism, plus desert spawn/restart consistency and continuous routes from every patrol spawn.
 - Native Linux graphical smoke and actual Windows x64 executable smoke under Wine check window/render creation, movement, weapon selection, scope and firing.
 - The standalone Windows gameplay test executable is also run under Wine. This does not replace testing on every Windows GPU or driver.
 - Launch with `--smoke-test` to run the short graphical check and save a screenshot. `--capture` captures the initial gameplay view. Normal launches start at the menu.

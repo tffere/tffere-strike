@@ -38,7 +38,7 @@ int main() {
             check(circleBlocked({0, 0}, .35f, obstacles), "box interior must collide");
             check(circleBlocked({1.2f, 1.2f}, .35f, obstacles), "round corner must collide");
             check(!circleBlocked({1.4f, 1.4f}, .35f, obstacles), "clear corner must pass");
-            check(circleBlocked({21.3f, 0}, .35f, {}), "map edge must collide");
+            check(circleBlocked({MAP_LIMIT-.2f, 0}, .35f, {}), "map edge must collide");
             check(!circleBlocked({0, 0}, .35f, obstacles, 2.01f), "feet above box must clear it");
         }},
         {"swept movement blocks tunneling and slides along cover", [] {
@@ -234,6 +234,28 @@ int main() {
                               {game.player.pos.x, game.player.y, game.player.pos.z}, game.obstacles),
                   "blocked bot never routed around the container");
             check(!circleBlocked(bot.pos, .35f, game.obstacles), "navigation entered solid cover");
+        }},
+        {"desert spawn and restart preserve the expanded map", [] {
+            Game g(true);g.start();
+            check(near(g.player.pos.x,DESERT_PLAYER_SPAWN.x)&&near(g.player.pos.z,DESERT_PLAYER_SPAWN.z),"wrong desert spawn");
+            check(!circleBlocked(g.player.pos,.36f,g.obstacles),"player spawned in a wall");
+            for(auto b:g.bots)check(!circleBlocked(b.pos,.36f,g.obstacles),"bot spawned in cover");
+            g.player.pos={25,20};g.restart();
+            check(near(g.player.pos.z,26)&&g.obstacles.size()==desertObstacles().size(),"restart changed map");
+        }},
+        {"all desert patrol spawns have a continuous walkable route", [] {
+            Game g(true);
+            for(auto b:g.bots){
+                Vec2 p=b.pos;
+                for(int n=0;n<300&&distance(p,g.player.pos)>.7f;n++){
+                    Vec2 next=navigationWaypoint(p,g.player.pos,g.obstacles);
+                    float d=distance(next,p);
+                    check(d>.001f,"navigation found no desert route");
+                    moveActor(p,next.x-p.x,next.z-p.z,g.obstacles,.36f);
+                    check(!circleBlocked(p,.35f,g.obstacles),"route crossed solid cover");
+                }
+                check(distance(p,g.player.pos)<.7f,"desert route did not reach spawn");
+            }
         }},
         {"identical seeds and inputs reproduce bots and combat", [] {
             Game a, b; a.start(); b.start();

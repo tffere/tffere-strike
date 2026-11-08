@@ -29,7 +29,7 @@
 namespace strike {
 
 constexpr float PI = 3.14159265358979323846f;
-constexpr float MAP_LIMIT = 21.5f;
+constexpr float MAP_LIMIT = 31.5f;
 constexpr float PLAYER_RADIUS = .35f;
 constexpr float EYE_HEIGHT = 1.7f;
 constexpr float ROUND_SECONDS = 180.f;
@@ -38,6 +38,7 @@ struct Vec2 { float x = 0, z = 0; };
 struct Vec3 { float x = 0, y = 0, z = 0; };
 enum class ObstacleKind { Wall, Building, Container, Crate, Barrel };
 struct Obstacle { float x, z, w, d, h; ObstacleKind kind = ObstacleKind::Crate; };
+#include "map_layout.hpp"
 
 enum class WeaponId { AR7 = 0, AW9 = 1 };
 enum class Mode { Ready, Playing, Paused, Won, Lost };
@@ -161,7 +162,7 @@ inline void moveActor(Vec2& pos, float dx, float dz,
 // the exact AABBs. Return the next reachable cell, not a teleport destination.
 inline Vec2 navigationWaypoint(Vec2 from, Vec2 goal,
                                 const std::vector<Obstacle>& obstacles) {
-    constexpr int extent = 21, side = extent * 2 + 1, count = side * side;
+    constexpr int extent = static_cast<int>(MAP_LIMIT), side = extent * 2 + 1, count = side * side;
     std::array<bool, count> free{};
     std::array<int, count> parent{};
     std::array<int, count> queue{};
@@ -282,7 +283,11 @@ public:
     ShotResult lastShot{};
     std::vector<Event> events;
 
-    Game() { resetState(); mode = Mode::Ready; }
+    bool desertMap = false;
+    explicit Game(bool desert=false):desertMap(desert) {
+        if(desertMap)obstacles=desertObstacles();
+        resetState();mode=Mode::Ready;
+    }
     WeaponState& weapon() { return weapons[static_cast<std::size_t>(selectedWeapon)]; }
     const WeaponState& weapon() const { return weapons[static_cast<std::size_t>(selectedWeapon)]; }
     int remaining() const { return static_cast<int>(bots.size()) - kills; }
@@ -431,6 +436,7 @@ private:
     std::mt19937 random_{711};
     void resetState() {
         player = Player{};
+        if(desertMap)player.pos=DESERT_PLAYER_SPAWN;
         kills = 0;
         timeLeft = ROUND_SECONDS;
         elapsed = muzzleFlash = hitMarker = damageFlash = 0;
@@ -443,7 +449,7 @@ private:
         constexpr std::array<Vec2, 6> starts{{{0, 1}, {-3, -6}, {8, 10}, {4, -15}, {-16, 16}, {17, -4}}};
         for (std::size_t i = 0; i < bots.size(); ++i) {
             bots[i] = Bot{};
-            bots[i].pos = bots[i].spawn = starts[i];
+            bots[i].pos = bots[i].spawn = desertMap?DESERT_BOT_SPAWNS[i]:starts[i];
             bots[i].phase = static_cast<float>(i);
             bots[i].cooldown = 1 + static_cast<float>(i) * .35f;
         }
