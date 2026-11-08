@@ -1,15 +1,23 @@
-# Tffere Strike — Native C++ v1.3
+# Tffere Strike — Native C++ v1.4
 
 A standalone Windows desktop FPS written in C++17 with raylib. Play against six bots in a connected desert quarter, choose an AR-7 rifle or AW-9 sniper, use cover, and clear the depot before the round ends.
 
 ## Download and play on Windows
 
-1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.3-Windows-x64.zip).
+1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.4-Windows-x64.zip).
 2. Right-click the ZIP and select **Extract All**. Open the extracted `TffereStrike` folder.
 3. Double-click **TffereStrike.exe**. Keep its `assets` folder beside it.
 4. Click **Deploy into Depot**, or press **Enter**.
 
 No Node.js, npm, Python, browser, or development tools are needed to play. Requires Windows 10/11 x64 with an OpenGL 3.3-capable graphics driver. Extract the whole ZIP; do not run the executable from inside the archive. The executable is not digitally signed.
+
+## v1.4: crouch, bot postures and footsteps
+
+Hold **Ctrl** to crouch: smoothly lowered view, slower movement and quieter steps. Sprint is disabled while crouching. Grounded foot position is preserved through stance changes and landing.
+
+Bots now buckle at the knees, rotate the torso independently, release their arms, drop the weapon and settle into varied fallen poses. Falls prefer an unobstructed direction and finish even when the final kill ends the round. Knee-pad proportions and running weight shift were refined. These remain procedural animations.
+
+Five distinct [Kenney concrete-footstep samples](https://kenney.nl/assets/impact-sounds) replace generated footstep noise. Samples vary without immediate repeats and are triggered by actual grounded travel. Crouching is quieter; nearby bots' steps have distance/pan/obstruction-based volume. Camera bob also follows actual travel. The included CC0 credit/license and exact sample hashes are in `native/assets/footsteps/`.
 
 ## v1.3: sensory awareness and bullet marks
 
@@ -18,7 +26,7 @@ No Node.js, npm, Python, browser, or development tools are needed to play. Requi
 - Hidden movement without a new audible cue cannot change a bot's target or route. Patrol destinations and starting facing directions are independent of player location. Bots do not share omniscient target information.
 - Shots leave dark, chipped bullet marks on walls, buildings and cover. Marks follow the hit face, project onto visible doors/trim, remain during the round, and clear on restart. The oldest mark is replaced after 256 impacts. Body hits and sky misses do not leave floating marks.
 
-The current Windows package passes 31 native gameplay cases and Microsoft Defender/ClamAV scans. Exact reports, hashes and limitations are bundled under `SCAN-REPORTS/` and recorded in [v1.3 validation](docs/security/v1.3/RECHECK.md). Scan results are not a guarantee of safety. The executable remains unsigned. A graphical Windows playtest is still needed.
+The current Windows package passes 36 native gameplay/pose cases and Microsoft Defender/ClamAV scans. Exact reports, hashes and limitations are bundled under `SCAN-REPORTS/` and recorded in [v1.4 validation](docs/security/v1.4/RECHECK.md). Scan results are not a guarantee of safety. The executable remains unsigned. A graphical Windows playtest is still needed.
 
 For every shipped update, a new version number, Git tag, [GitHub Release](https://github.com/tffere/tffere-strike/releases) and versioned ZIP are preserved. Future patch rebuilds also receive a new version; previous versioned downloads are not overwritten.
 
@@ -51,6 +59,7 @@ Extract each version into a separate folder. The `v1.0` and `v1.1` Git tags pres
 | R | Reload; restart when paused |
 | Space | Jump |
 | Left Shift | Sprint |
+| Hold Ctrl | Crouch: lower view, slower movement, quieter footsteps |
 | Escape | Pause/resume; close from the start/end menu |
 | Enter | Deploy / resume / new round |
 | F11 | Toggle fullscreen |
@@ -64,7 +73,7 @@ Extract each version into a separate folder. The `v1.0` and `v1.1` Git tags pres
 - Revised human-proportioned patrol models with shaped faces, helmets, goggles, tactical equipment and camouflage. Distance-driven alternating strides, bent knees, breathing, smooth turning, hit reactions and animated falls replace the original rigid patrol pose.
 - Chamfered rifle/sniper models with compact sights, layered rails, scope/bolt detail, fitted black gloves and shaped bare forearms, plus recoil/reload movement.
 - Animated sniper zoom and reticle, separate ammunition/reload state, and distinct fire rates and damage.
-- Synthesized firing, reload, hit and footstep sounds. A missing audio device does not prevent play.
+- Synthesized firing/reload/hit sounds and sampled concrete footsteps. A missing audio device does not prevent play.
 - Six bots with cover-aware vision/shooting and deterministic navigation around obstacles.
 - Radar, hit feedback, health, ammunition, a three-minute round, pause, restart and win/loss states.
 
@@ -106,9 +115,9 @@ python3 native/build.py --platform windows --zig /path/to/zig --package
 
 ## Validation
 
-For v1.3, all 31 native gameplay tests pass on Linux and Windows, including hidden-player patrol independence, fixed last-seen memory, search expiry, muffled/discrete sound detection, grounded footsteps, bullet impact positions/caps, field of view, blocked shots, stance hitboxes and navigation. The eight earlier browser prototype tests also pass. The Windows x64 package is built with Visual Studio on a fresh GitHub Windows runner.
+For v1.4, all 36 native gameplay/pose tests pass on Linux and Windows, including hidden-player patrol independence, fixed last-seen memory, search expiry, muffled/discrete sound detection, grounded footsteps, bullet impact positions/caps, field of view, blocked shots, stance hitboxes and navigation. The eight earlier browser prototype tests also pass. The Windows x64 package is built with Visual Studio on a fresh GitHub Windows runner.
 
-A graphical Windows playtest of v1.3 has not been performed in this environment. The earlier v1.1 graphical smoke tests do not validate the new animation. Please try v1.2 on your Windows machine and report movement or rendering issues.
+A graphical/listening Windows playtest of v1.4 has not been performed in this environment. The earlier v1.1 graphical smoke tests do not validate the new animation. Please try v1.2 on your Windows machine and report movement or rendering issues.
 
 Launch with `--smoke-test` for a short graphical check and screenshot, or `--capture` for an initial gameplay view. Normal launches start at the menu.
 
