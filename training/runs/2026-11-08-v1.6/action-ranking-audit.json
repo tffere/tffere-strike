@@ -1,0 +1,14 @@
+[
+  {
+    "after_rounds": 100,
+    "changed_unmasked_argmax_states": 3,
+    "state_count": 192,
+    "limitation": "Global unmasked ranks; runtime uses legal masks. Does not identify evaluation state visitation."
+  },
+  {
+    "after_rounds": 200,
+    "changed_unmasked_argmax_states": 4,
+    "state_count": 192,
+    "limitation": "Global unmasked ranks; runtime uses legal masks. Does not identify evaluation state visitation."
+  }
+]
