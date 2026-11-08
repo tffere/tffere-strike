@@ -11,3 +11,7 @@ Create a Git tag and GitHub Release for each shipped version, with its versioned
 Run native gameplay tests and scan each newly built Windows executable/package before publishing. Preserve the exact scan reports and file hashes for that version. Do not describe an antivirus scan as a guarantee of safety or tell the user to bypass antivirus.
 
 Record new user requests, completed work and unfinished work in `docs/PROJECT-STATUS.md` so another chat can resume without the prior conversation.
+
+## Bot learning protocol
+
+Use the real `strike::Game::step` code for future learning experiments, not the historical simplified Duel simulator. The latest requested protocol is two separate learners (one AI player, one AI game bot) for 100 rounds, followed by 20 frozen tests of the final game bot against the saved original player policy. Save before/after policies and every outcome. Do not count validation or testing as training. Report wins, losses and timeouts separately; a changed policy is not proof of improvement. Do not mix the tactical benchmark score with duel win rate. Retain poor/superseded results with corrections rather than hiding them.

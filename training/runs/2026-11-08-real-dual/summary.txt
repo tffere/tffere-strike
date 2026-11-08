@@ -1,0 +1,13 @@
+training_environment=real_strike_Game_step
+training_rounds=100
+separate_learning_policies=2
+training_seeds=920000..920099
+test_rounds=20
+test_seeds=930000..930019
+test_learning=disabled
+test_opponent=before_player_policy
+bot_wins=0
+bot_losses=16
+timeouts=4
+bot_win_rate=0
+policy_selection=final_round_100_no_test_selection

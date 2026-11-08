@@ -1,0 +1,12 @@
+gameplay=actual_strike_game_step
+map=desert
+round_seconds=180
+training_rounds=100
+training_seeds=800000..800099
+validation_seeds=810000..810019
+evaluation_seeds=820000..820099
+selected_round=10
+learner_role=game_bot
+opponent_role=ai_controlled_player
+learning_during_evaluation=0
+selection=wins_minus_quarter_timeouts

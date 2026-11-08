@@ -1,3 +1,5 @@
+> Historical simplified-simulator results. The latest requested real-game experiment is in [the dual-learner report](../2026-11-08-real-dual/REPORT.md).
+
 # Self-play training report — November 8, 2026
 
 ## What ran
@@ -26,7 +28,7 @@ Two distinct experiments were performed: a rejected 100-round pilot and a correc
 
 *Match score = wins + half of draws, divided by 100 duels. It is not win rate. Raw rows, damage/shooting/switching/cover counts and paired-seed bootstrap uncertainty are saved beside this report.
 
-Against the rifle chaser, win rate increased by 26 percentage points (42% → 68%). Against the weapon-aware defender, wins decreased (28% → 22%), losses decreased sharply (60% → 14%), and draws increased (12% → 64%). This is improved survival with a major stalling problem, not evidence of stronger winning play against the defender. Do not hide this regression by reporting only match score or accuracy.
+Against the rifle chaser, win rate increased by 26 percentage points (42% → 68%). Against the weapon-aware defender, wins decreased (28% → 22%), losses decreased sharply (60% → 14%), and draws increased (12% → 64%). Of the 64 trained-policy draws, 52 ended in simultaneous elimination and 12 at the time limit; the starting policy had 12 time-limit draws. The timeout count did not increase. Earlier descriptions of improved survival or more stalling were incorrect: this is primarily more mutual kills, not stronger winning play. Do not hide the lower win rate by reporting only match score or accuracy.
 
 Only 176 of 1,728 state/action pairs were visited over the 100-round run. These small, controlled results do not establish broad intelligence or successful transfer to the real game.
 
@@ -44,4 +46,4 @@ The lab reuses the game's collision, visibility, navigation and weapon-state cod
 
 Learning chooses high-level actions (shoot current gun, engage rifle/sniper, hide, chase, flank left/right, reload, search). Cover-position generation, pathfinding, perception and aiming remain programmed mechanics, not learned geometry or neural animation. Evaluation opponents are fixed rule-based strategies, not separate trained policies and not a measurement of v1.4's 62.5 benchmark.
 
-Recommended next work: address stalling without tuning against these final test seeds, validate on new maps/seeds, then integrate and rebenchmark in a separately versioned game release. Do not automatically install this experimental policy into the playable game.
+Historical follow-up: subsequent actual-game experiments are documented separately. See ../2026-11-08-real-dual/REPORT.md for the latest 100+20 experiment. Only actual-game code should be used for future learning, per the user. No inference from this simplified score alone establishes live-game improvement.

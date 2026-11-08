@@ -1,0 +1,6 @@
+{
+  "native/gameplay.hpp": "4072b8aacf6705dcb4917ade12148e931c901ad6048eb5f61016d2460e4213d4",
+  "native/tactical_policy.hpp": "cfc2b8418d5a0f904442c2f88357c777b78f1da4ac9fb8051f02454823611e7b",
+  "native/training/actual_game.hpp": "ce7536d37889956b7b89626adbee3eb02198b8f15595d49f49f528ef7fdf066f",
+  "native/training/train_real_dual.cpp": "d66b5da2ef5407868e22dd27e51bc074d3e6e8d3e124ca3b57ba85e9c5796316"
+}

@@ -1,0 +1,5 @@
+policy,opponent,wins,timeouts,losses
+classic,chaser,0,16,34
+classic,defender,0,7,43
+trained,chaser,0,16,34
+trained,defender,17,7,26

@@ -1,0 +1,5 @@
+policy,opponent,wins,timeouts,losses,mean_damage,mean_taken
+initial,chaser,0,16,34,4.96,68
+initial,defender,2,4,44,8.74,88
+selected,chaser,0,16,34,11.52,68
+selected,defender,16,4,30,36.9,60

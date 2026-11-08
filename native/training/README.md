@@ -32,8 +32,20 @@ Nine actions: shoot current weapon, engage rifle, engage sniper, hide, chase, fl
 
 Rewards: time cost −0.01/tick; +0.04 per actual damage dealt; −0.05 per damage received; +12/−12 for win/loss; at timeout +0.02 times HP difference; +0.12 when a critically wounded actor enters cover. Smaller penalties discourage blocked movement, invalid shots, wasted reloads and unnecessary switching. Q-learning uses alpha 0.12, gamma 0.96 per decision and exploration 0.45 → 0.10. Health/damage/accuracy are not improved by training.
 
-Policies are text, `STRIKE_Q_V2`, with 192 × 9 finite Q values. V1 had different action semantics and is deliberately rejected. These files are not understood by the current live game; a future integration needs observation/action parity and regression testing first.
+Policies are text, `STRIKE_Q_V2`, with 192 × 9 finite Q values. V1 had different action semantics and is deliberately rejected. v1.5 can load this policy schema; deployment still requires matching observations/actions and an explicit versioned policy choice.
 
 ## Evidence
 
-See [the run report](../../training/runs/2026-11-08/REPORT.md). It includes the rejected pilot, corrected run, held-out win/draw/loss results, selected checkpoint, reproducibility checks and transfer limitations. The stronger opponent exposed a draw/stalling problem despite improved survival. The live game's prior tactical score remains unchanged.
+See [the run report](../../training/runs/2026-11-08/REPORT.md). It includes the rejected pilot, corrected run, held-out win/draw/loss results, selected checkpoint, reproducibility checks and transfer limitations. The stronger opponent exposed many mutual eliminations; the earlier survival/stalling interpretation was incorrect. The live game's prior tactical score remains unchanged.
+
+## Current workflow: real game code only
+
+Per the user's instruction, future learning must use actual `Game::step`, not the historical simplified simulator. The latest requested workflow is **100 rounds with two independent learners**, then **20 frozen tests of the final game-bot policy against the saved original player policy**:
+
+```sh
+./work/training-build/strike-real-dual native/assets/bot-policy.txt work/new-real-dual-run
+```
+
+On Windows, the executable is normally `work/training-build/Release/strike-real-dual.exe`. Output must be empty. Both original policies, two final policies, 10 checkpoints per role, all 100 training and 20 test results are saved. Winner 0 is game bot; 1 is player; −1 is timeout. Evaluation checks that no Q values change. The latest result is 0 wins / 16 losses / 4 timeouts; it is not an established improvement.
+
+The optional `strike-actual-trainer` is an older one-learner experiment, while `strike-trainer` is historical simplified training. Neither is the current user-requested workflow. See [the authoritative report](../../training/runs/2026-11-08-real-dual/REPORT.md).
