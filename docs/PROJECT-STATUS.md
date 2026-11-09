@@ -85,3 +85,9 @@ AR-7 body36→25 for both sides (round25.2), head75 unchanged. Completed request
 Records training/runs/2026-11-08-frozen25-300 and2026-11-08-frozen25-next300; earlier36HP campaign separate. Level0 policy weights never changed; physical rules changed between campaigns. Default runtime labels AFTER300/BASELINE; F5 AFTER600/EXPERIMENTAL, counting25HP rounds only. User asked detailed50-round metrics and reaction timing; current training sensing/firing every50ms, high-level choices250ms, maxaim3.5rad/s, no fixed human delay.
 
 v1.7 runtime source/build/package verification underway. 49 native tests passed after damage reduction. Graphical Windows playtest still outstanding. No Unreal/Blender work started.
+
+## Latest continuation: stronger trade penalty, additional300 completed
+
+User asked another300 from latest bot against Level0. Completed3×100 from previous final, same25HP physics/broadsearch/frozenplayer, new seeds. Disclosed mutual-death reward penalty raised5→150, all else fixed. Fixed100 progress43→44→49→50 wins, mutual28→14→3→1; damage73→65. Separate final-only100 comparison52→45 wins, mutual15→1: no established general win improvement. Raw logs and10/50-round metrics/policies/checkpoints in training/runs/2026-11-08-frozen25-survival300. This makes900 accumulated25HP rounds over3 requested batches, preceded by300 at36HP. Finalafter900 candidate optional; default remains preservedafter300 baseline.
+
+Added weapon-specific lethal-hit counters. Prior batch300 replay verified every original round field and final table bytes identical; counted sniper kills per50 as2,17,28,21,19,23, including mutual deaths. Saved audit beside prior report, not new accumulated training. Fixed MSVC lambda capture in spawn-pool utility after Windows training CI failed; Linux tests pass. v1.7 release verification in progress.

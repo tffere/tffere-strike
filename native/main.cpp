@@ -477,7 +477,7 @@ int main(int argc,char** argv){
                 DrawRectangleGradientV(0,0,int(sw),int(105*ui),{10,17,23,205},{10,17,23,0});
                 DrawRectangleGradientV(0,int(sh-120*ui),int(sw),int(120*ui),{10,17,23,0},{10,17,23,220});
                 text(gfx.font,"TFFERE",30*ui,24*ui,22*ui,PALE,3*ui);text(gfx.font,"STRIKE",139*ui,24*ui,22*ui,SAND,3*ui);
-                text(gfx.font,experimentalAI?"AI: AFTER 600 / EXPERIMENTAL [F5]":"AI: AFTER 300 / BASELINE [F5]",31*ui,53*ui,9*ui,{161,178,183,255},2*ui);
+                text(gfx.font,experimentalAI?"AI: AFTER 900 / EXPERIMENTAL [F5]":"AI: AFTER 300 / BASELINE [F5]",31*ui,53*ui,9*ui,{161,178,183,255},2*ui);
                 center(gfx.font,"SANDSTONE / OLD QUARTER",sw/2,26*ui,11*ui,SAND);
                 center(gfx.font,"ELIMINATE THE PATROL",sw/2,48*ui,15*ui,PALE);
                 int seconds=std::max(0,int(game.timeLeft));

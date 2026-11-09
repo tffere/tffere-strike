@@ -1,0 +1,8 @@
+{
+  "native/gameplay.hpp": "1ef307be7d9224757dcf7ad783dda9f519c47ac285213be75b4e64faec8e4b38",
+  "native/tactical_policy.hpp": "b27e7bb917a98561874e004829cf36124296b9dee07c7befd0b4611657f4f110",
+  "native/training/actual_game.hpp": "c6a8b499af27142c9250592cd6692eba9c84b66031c28d0557727595fb4b13bd",
+  "native/training/campaign_episode.hpp": "1a75a651d5969832d813dbc4d5052f0e3a951e9766d0771e51522fef3982b66f",
+  "native/training/campaign_metrics.hpp": "771b0e39487b52acee1c8127eaeb89dc4cf373515c07105da2143b59448364e2",
+  "native/training/train_campaign.cpp": "e885f0e501000b8a3598779d1948d3c942108fe7115f681c27345d620c5f09bc"
+}

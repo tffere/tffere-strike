@@ -1,0 +1,1 @@
+Weapon-event instrumentation replayed each original100-round cycle from its original checkpoint and RNG seed. Every pre-existing CSV field and final policy byte matched. This was a verification replay, not accumulated learning beyond the recorded300 rounds. bot_sniper_kills counts kills by AW-9, including mutual deaths. All kill totals validated against wins plus mutual deaths.

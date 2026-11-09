@@ -6,7 +6,7 @@
 struct CampaignConfig {
     bool freezePlayer=false,randomStarts=false,wideSearch=false;
     int evaluationGames=20;
-    double explorationReward=0;
+    double explorationReward=0,mutualPenalty=5;
     double playerAlphaScale=1;
     double alpha=.10,gamma=.995,damage=.10,taken=.08,timeCost=.001,switchCost=.20;
     double win=40,loss=25,timeout=35;
@@ -16,7 +16,7 @@ struct CampaignConfig {
 // Integer navigation cells in the connected component of the normal player spawn.
 inline std::vector<strike::Vec2> campaignSpawnPool(const std::vector<strike::Obstacle>& obstacles){
     constexpr int side=61;std::array<bool,side*side> seen{};std::vector<int> todo;
-    auto point=[](int i){return strike::Vec2{float(i%side-30),float(i/side-30)};};
+    auto point=[=](int i){return strike::Vec2{float(i%side-30),float(i/side-30)};};
     int start=56*side+30;
     if(strike::circleBlocked(point(start),.4f,obstacles))throw std::runtime_error("Spawn anchor blocked");
     todo.push_back(start);seen[start]=true;
@@ -34,6 +34,7 @@ struct CampaignResult {
     const char* endReason="ongoing";
     std::array<int,2> shots{},switches{},damage{},decisions{};
     std::array<double,2> reward{};
+    std::array<int,2> botKillsByWeapon{},playerKillsByWeapon{};
     int botHits=0,encounters=0,visitedCells=0;
     double visibleSeconds=0,visibleWithoutShotSeconds=0,readyVisibleWithoutShotSeconds=0;
     double firstShotSeconds=-1,firstVisibleSeconds=-1;
@@ -99,7 +100,12 @@ inline CampaignResult campaignEpisode(strike::tactics::Policy& botPolicy,strike:
             bool fired=false;
             for(auto e:game.events){
                 if(e.type==EventType::BotShot&&e.bot==0){fired=true;if(result.firstShotSeconds<0)result.firstShotSeconds=result.ticks*.05;}
-                if(e.type==EventType::PlayerHit&&e.bot==0)result.botHits++;
+                if(e.type==EventType::PlayerHit&&e.bot==0){
+                    result.botHits++;
+                    if(playerHP>0&&game.player.health==0)result.botKillsByWeapon[static_cast<int>(e.weapon)]++;
+                }
+                if(e.type==EventType::BotHit&&e.bot==0&&hp>0&&game.bots[0].hp==0)
+                    result.playerKillsByWeapon[static_cast<int>(e.weapon)]++;
             }
             if(visible){result.visibleSeconds+=.05;if(!fired){result.visibleWithoutShotSeconds+=.05;if(ready)result.readyVisibleWithoutShotSeconds+=.05;}}
             const auto cell=std::make_pair(int(std::floor(game.bots[0].pos.x/4)),int(std::floor(game.bots[0].pos.z/4)));
@@ -121,7 +127,7 @@ inline CampaignResult campaignEpisode(strike::tactics::Policy& botPolicy,strike:
         bool terminal=game.mode!=Mode::Playing;
         if(terminal){result.winner=game.mode==Mode::Draw?-1:game.mode==Mode::Won?1:game.player.health<=0?0:-1;
             result.endReason=game.mode==Mode::Draw?"mutual_elimination":result.winner==-1?"timeout":"elimination";
-            for(int i=0;i<2;i++)reward[i]+=result.winner==-1?(game.mode==Mode::Draw?-5:-config.timeout):result.winner==i?config.win:-config.loss;}
+            for(int i=0;i<2;i++)reward[i]+=result.winner==-1?(game.mode==Mode::Draw?-config.mutualPenalty:-config.timeout):result.winner==i?config.win:-config.loss;}
         if(learning){
             auto next=game.botObservation(0);botPolicy.learnMasked(states[0],executed[0],reward[0],next.index(),terminal,game.botActionMask(0),config.alpha,config.gamma);
             auto playerNext=opponent.observation(game);if(!config.freezePlayer)playerPolicy.learnMasked(states[1],executed[1],reward[1],playerNext.index(),terminal,opponent.actionMask(game),config.alpha*config.playerAlphaScale,config.gamma);
