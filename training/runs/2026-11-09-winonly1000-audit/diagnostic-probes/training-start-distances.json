@@ -1,0 +1,8 @@
+{
+  "training_games": 1000,
+  "min_m": 8.0,
+  "median_m": 34.74908208863587,
+  "mean_m": 35.80864635575831,
+  "starts_under12m": 53,
+  "starts_under20m": 161
+}

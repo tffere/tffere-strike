@@ -1,0 +1,22 @@
+{
+  "training_budget": 1000,
+  "branches": {
+    "conservative": 500,
+    "exploratory": 500
+  },
+  "start": "v1.7 selected400",
+  "starting_policy_sha256": "e10b643bdf7688eeab753ea1ddeb7daaae0856def42fc74f5bb64b03a03b3963",
+  "frozen_player_sha256": "930a9dff868695ba196c36ab84ca86b2eca209c9dca7bc2ee793687073e4a42e",
+  "reward": "1 win, 0 all other outcomes; no shaping or time discount",
+  "validation_seeds": [
+    3100000,
+    3100599
+  ],
+  "fresh_test_seeds": [
+    3200000,
+    3200999
+  ],
+  "selection": "Most validation wins among baseline and ten100-round branch checkpoints, ties baseline then earliest candidate; lock before fresh tests",
+  "fresh_gate": "Strictly more wins and paired one-sided exact binomial p<0.05 on fresh1000 cases; otherwise keep incumbent",
+  "physics": "unchanged v1.7,25HP rifle,shared reaction population mean150ms SD50, real desert map random connected spawns/headings"
+}

@@ -1,0 +1,1 @@
+50 seeded frozen episodes match original campaign outcomes,ticks,damage and both shot counts exactly. No learning.

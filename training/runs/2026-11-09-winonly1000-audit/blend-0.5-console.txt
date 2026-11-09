@@ -1,0 +1,1 @@
+RESULT cycle 0: 291 wins, 272 losses, 37 draws; 2035 shots, 12 switches, damage 68.375

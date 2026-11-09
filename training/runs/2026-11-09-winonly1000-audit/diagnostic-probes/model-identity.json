@@ -1,0 +1,8 @@
+{
+  "v17_default_equals_latest1000_start": true,
+  "v17_f5_equals_earlier_weaker_baseline": true,
+  "v17_default_equals_prior_selected400": true,
+  "training_source_git": "54e1205",
+  "training_executable_sha256": "832f1da7183e52525029612d6ccd77811cf5e58580c9fe53917188f4178e8c4e",
+  "level0_source_sha256": "930a9dff868695ba196c36ab84ca86b2eca209c9dca7bc2ee793687073e4a42e"
+}

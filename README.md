@@ -11,6 +11,10 @@ A standalone Windows desktop FPS written in C++17 with raylib. Play against six 
 
 No Node.js, npm, Python, browser, or development tools are needed to play. Requires Windows 10/11 x64 with an OpenGL 3.3-capable graphics driver. Extract the whole ZIP; do not run the executable from inside the archive. The executable is not digitally signed.
 
+## Latest research: additional1000 rounds and benchmark audit
+
+The1000-round follow-up did not establish an extra win-rate gain (fresh1000:47.7%→47.9%). **v1.7 remains the default release.** Frozen diagnostics found coarse20Hz benchmark timing differs materially from120Hz play, while the small decision table merges contexts needing different actions. Close starting spawns were not the main explanation. [Full tested hypotheses and raw evidence](training/runs/2026-11-09-winonly1000-audit/DIAGNOSTIC-REPORT.md).
+
 ## v1.7: 25 HP rifle, reaction delays and win-only learning
 
 AR-7 body damage is25HP for both sides, head75 unchanged. Bot reaction delay is independently sampled per new/reacquired sight: uniform63–237ms, mean150ms/SD50ms. Aim/readiness and physics ticks can delay shots further. The AI-player Level0 controller uses the same delay in training; human input has no artificial delay. Broad map search uses sight/hearing evidence without tracking hidden positions.

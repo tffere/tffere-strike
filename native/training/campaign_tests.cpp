@@ -16,6 +16,10 @@ int main(){try{
     Game reactionGame(true);reactionGame.start();reactionGame.obstacles.clear();reactionGame.player.pos={0,8};reactionGame.player.yaw=0;reactionGame.bots[0]=Bot{};
     training::PlayerOpponent reactionPlayer(false);reactionPlayer.observe(reactionGame);
     require(!reactionPlayer.input(reactionGame).fire,"AI player bypassed reaction delay");
+    Game turnGame(true);turnGame.start();turnGame.obstacles.clear();turnGame.player.pos={0,0};turnGame.player.yaw=0;turnGame.bots[0].pos={8,8};
+    training::PlayerOpponent fastStep(false),slowStep(false);fastStep.known=slowStep.known=true;fastStep.evidence=slowStep.evidence={-8,0};
+    auto fastInput=fastStep.input(turnGame,.01f),slowInput=slowStep.input(turnGame,.05f);
+    require(std::abs(std::abs(fastInput.lookX)-AI_TURN_RATE*.01f)<.00001f&&std::abs(std::abs(slowInput.lookX)-AI_TURN_RATE*.05f)<.00001f,"AI player turn rate does not scale with simulation step");
     auto bot=tactics::initialPolicy(),player=bot,original=player;CampaignConfig c;
     c.freezePlayer=true;c.randomStarts=true;c.wideSearch=true;
     c.winOnly=true;c.episodicLearning=true;

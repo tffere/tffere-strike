@@ -1,0 +1,12 @@
+{
+  "gained_wins": 74,
+  "lost_wins": 72,
+  "paired_one_sided_exact_p": 0.4670397885773164,
+  "win_rate_difference": 0.002,
+  "approx_paired_95_ci": [
+    -0.021694295795681565,
+    0.025694295795681568
+  ],
+  "gate_passed": false,
+  "action": "Retain v1.7 default; no new game shipped"
+}

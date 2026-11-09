@@ -19,3 +19,7 @@ Use the real `strike::Game::step` code for future learning experiments, not the 
 ## Latest protocol override
 
 User now names the original frozen player policy AI-player Level0. New campaigns train ONLY the bot against that unchanged policy, with random valid connected-map spawns/headings,100 rounds per cycle repeated3 times. Preserve separate baselines for physical-rule changes and report damage/taken, conditional winning time, hit rate and mutual eliminations, plus10/50-round blocks and frozen tests. Latest AR-7 body damage25/head75 both sides. Do not resume old dual-learner campaigns without instruction.
+
+## Current completed budget and diagnostics
+
+Latest authorized1000 win-only training rounds are exhausted (two independent500-round branches). Fresh-test gate failed; keep v1.7 current. No further learning without new user instruction. Additional frozen diagnostic tests are not learning. See training/runs/2026-11-09-winonly1000-audit/DIAGNOSTIC-REPORT.md before interpreting live play vs coarse frozen results; future training should align timesteps/context/action freedom, not silently alter benchmark rules and call it a learning gain.

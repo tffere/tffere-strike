@@ -12,8 +12,8 @@ struct PlayerOpponent {
         Bot eyes;eyes.pos=game.player.pos;eyes.yaw=game.player.yaw;eyes.feet=game.player.y-EYE_HEIGHT;
         const auto& b=game.bots[0];return botSees(eyes,botEye(b),game.obstacles);
     }
-    void observe(const Game& game) {
-        memory=std::max(0.f,memory-.05f);if(memory<=0)known=false;
+    void observe(const Game& game,float dt=.05f) {
+        memory=std::max(0.f,memory-dt);if(memory<=0)known=false;
         if(sees(game)){
             const auto& b=game.bots[0];evidence=b.pos;known=true;memory=6;targetY=b.feet+1.1f-CROUCH_DROP*b.crouch;
         }else for(const auto& event:game.events){
@@ -44,13 +44,13 @@ struct PlayerOpponent {
         return tactics::legalActions(o,{gun.ammo,game.weapons[1-static_cast<std::size_t>(game.selectedWeapon)].ammo,
             switchDelay,weaponCommitment,gun.reloadRemaining,cover,true});
     }
-    Input input(Game& game) {
-        bool visible=sees(game);if(game.reactionDelays)reaction.update(visible,.05f,reactionRandom);const auto& p=game.player;
+    Input input(Game& game,float dt=.05f) {
+        bool visible=sees(game);if(game.reactionDelays)reaction.update(visible,dt,reactionRandom);const auto& p=game.player;
         float range=known?distance(p.pos,evidence):40;
         bool covered=known&&!lineOfSight({p.pos.x,p.y,p.pos.z},{evidence.x,1.7f,evidence.z},game.obstacles);
         const auto& gun=game.weapon();
         tactics::Observation o{visible,known,covered,p.health<=40,gun.ammo<=int(gun.spec.capacity*.2f),range<9?0:range<18?1:2,int(game.selectedWeapon)};
-        decision-=.05f;navigation-=.05f;switchDelay=std::max(0.f,switchDelay-.05f);weaponCommitment=std::max(0.f,weaponCommitment-.05f);
+        decision-=dt;navigation-=dt;switchDelay=std::max(0.f,switchDelay-dt);weaponCommitment=std::max(0.f,weaponCommitment-dt);
         if(decision<=.0001f){
             auto allowed=actionMask(game);
             int requested=forcedAction>=0?forcedAction:policy?policy->greedyMasked(o,allowed):tactics::fixedAction(o,advanced);
@@ -96,8 +96,8 @@ struct PlayerOpponent {
         Vec2 aim=known?evidence:goal;float dx=aim.x-p.pos.x,dz=aim.z-p.pos.z;
         if(std::hypot(dx,dz)>.01f){
             float yaw=std::atan2(-dx,-dz)-p.recoilYaw,pitch=std::atan2((visible?targetY:1.1f)-p.y,std::hypot(dx,dz))-p.recoilPitch;
-            in.lookX=-std::clamp(std::remainder(yaw-p.yaw,2*PI),-.05f*AI_TURN_RATE,.05f*AI_TURN_RATE);
-            in.lookY=std::clamp(pitch-p.pitch,-.05f*AI_TURN_RATE,.05f*AI_TURN_RATE);
+            in.lookX=-std::clamp(std::remainder(yaw-p.yaw,2*PI),-dt*AI_TURN_RATE,dt*AI_TURN_RATE);
+            in.lookY=std::clamp(pitch-p.pitch,-dt*AI_TURN_RATE,dt*AI_TURN_RATE);
         }
         const float aimRange=std::max(.001f,distance(p.pos,evidence));
         const float shotYaw=std::atan2(p.pos.x-evidence.x,p.pos.z-evidence.z);

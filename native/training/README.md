@@ -1,3 +1,9 @@
+# Frozen-opponent1000-round audit (latest)
+
+The latest1000 learning rounds did not pass the fresh-test improvement gate. v1.7 stays current. See [experiment report](../../training/runs/2026-11-09-winonly1000-audit/REPORT.md) and [tested hypotheses](../../training/runs/2026-11-09-winonly1000-audit/DIAGNOSTIC-REPORT.md).
+
+New frozen-only tools: strike-frozen-audit, strike-state-audit, strike-timing-audit, strike-symmetric-audit (build with this CMake project). PlayerOpponent.observe/input now accept dt, default .05. Fine-step probes scale all controller timers and turn limits properly. The campaign learning loop is STILL50ms; merely passing smaller dt to the opponent does not update the campaign's five-frame decision windows or metric clocks. Future finer-step learning must refactor those consistently and establish a fresh baseline. No extra learning beyond the latest1000 was run.
+
 # Latest frozen-opponent campaigns
 
 `strike-campaign BOT LEVEL0 LEVEL0 EMPTY_OUT CYCLE CONFIG [test-only]` supports freeze_player,random_starts,wide_search,evaluation_games and metric logs/checkpoints every10. Latest protocol: only bot learns3×100, player Level0 frozen,25HP rifle both sides. See [latest report](../../training/runs/2026-11-08-frozen25-next300/REPORT.md); earlier material below is historical.

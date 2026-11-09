@@ -1,0 +1,108 @@
+{
+  "selection": "Maximum validation wins only; ties incumbent then earlier listed candidate. Locked before fresh tests.",
+  "selected": {
+    "name": "blend-0.5",
+    "wins": 291,
+    "games": 600,
+    "policy_sha256": "b2d1c313836478a41858a39684f03d634f99929a5307acaee0da04f4d2932695"
+  },
+  "candidates": [
+    {
+      "name": "baseline",
+      "wins": 284,
+      "games": 600,
+      "policy_sha256": "7b050fbff7b2794e04f9f9e2476bc6f73691dab1ab02ae141eec8a17df1b717f"
+    },
+    {
+      "name": "conservative-1",
+      "wins": 232,
+      "games": 600,
+      "policy_sha256": "fe64ab5a31d73a53bda64ac290fe660ab11b314b28bddb7e4cebd181e10fe3e8"
+    },
+    {
+      "name": "conservative-2",
+      "wins": 269,
+      "games": 600,
+      "policy_sha256": "5f04a2f97659484ce99a5cc352fef729f71159b106247338c86519d256dbde14"
+    },
+    {
+      "name": "conservative-3",
+      "wins": 238,
+      "games": 600,
+      "policy_sha256": "b486e85bf55250610ce61bed6440ccd725ec586a93bf903299d05e9cb2b9981a"
+    },
+    {
+      "name": "conservative-4",
+      "wins": 249,
+      "games": 600,
+      "policy_sha256": "a22293efb97c50ac26388d4edfaa1dfa30fcd9e08965777a0477eebecd831e8c"
+    },
+    {
+      "name": "conservative-5",
+      "wins": 270,
+      "games": 600,
+      "policy_sha256": "95b269f8f0e594aa9d42640b39b6eeb68b818ee5ae24d8811bbe966e5bd55447"
+    },
+    {
+      "name": "exploratory-1",
+      "wins": 248,
+      "games": 600,
+      "policy_sha256": "17464fb529f9199682b5be2a20bdf5d68084a6006b09a47306058629c85facfe"
+    },
+    {
+      "name": "exploratory-2",
+      "wins": 233,
+      "games": 600,
+      "policy_sha256": "3954abe47cbd3315d1eaad66061f6d0f207c88c045497467394fb8c32c12c0c5"
+    },
+    {
+      "name": "exploratory-3",
+      "wins": 237,
+      "games": 600,
+      "policy_sha256": "23dc7dc766b0b3d5b1889fce4402152eb1b3fde9becb4d7cfa1fe6777034cfa3"
+    },
+    {
+      "name": "exploratory-4",
+      "wins": 288,
+      "games": 600,
+      "policy_sha256": "083b51516f05656c2392bc903f4f873f214e004d1746ebd575dd35887d55c772"
+    },
+    {
+      "name": "exploratory-5",
+      "wins": 286,
+      "games": 600,
+      "policy_sha256": "b146910e45dec4d0625338db65270a58e808a7681c887b25f424d6a1b26f3b4e"
+    },
+    {
+      "name": "blend-0.1",
+      "wins": 267,
+      "games": 600,
+      "policy_sha256": "c8f3349cb8f801d867e5814f34fb7a9b20d964f9a41fd8f0d50495051743e9aa"
+    },
+    {
+      "name": "blend-0.25",
+      "wins": 245,
+      "games": 600,
+      "policy_sha256": "748c0da1544ce21d7e585d7810f705e2aa849ea69d6719510b982b2ebd3bbdd5"
+    },
+    {
+      "name": "blend-0.5",
+      "wins": 291,
+      "games": 600,
+      "policy_sha256": "b2d1c313836478a41858a39684f03d634f99929a5307acaee0da04f4d2932695"
+    },
+    {
+      "name": "blend-0.75",
+      "wins": 291,
+      "games": 600,
+      "policy_sha256": "346188691e7509e15aa7baed1908e52e5d278e90ab277084a287ece6447bb25c"
+    },
+    {
+      "name": "blend-0.9",
+      "wins": 288,
+      "games": 600,
+      "policy_sha256": "ca05eb9193026d9720737322f951a7d1e2922d83655c9888b5a2d5897afe33a3"
+    }
+  ],
+  "adaptive_validation_extension": "Five blends added after original checkpoint validation, before fresh tests; see PLAN-AMENDMENT-BEFORE-FRESH-TEST.json."
+}

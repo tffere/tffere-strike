@@ -1,0 +1,2 @@
+0.05: bot384 player355 mutual261 /1000; fixed20m symmetric sniper duel, no learning
+0.00833333: bot485 player459 mutual56 /1000; fixed20m symmetric sniper duel, no learning

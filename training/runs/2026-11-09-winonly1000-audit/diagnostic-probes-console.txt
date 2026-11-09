@@ -1,0 +1,16 @@
+standard older_before_v17: 156W 232L 12 mutual 0 timeout /400
+standard v17: 180W 199L 20 mutual 1 timeout /400
+standard latest1000: 202W 166L 32 mutual 0 timeout /400
+same_policy_roles level0_both: 170W 137L 92 mutual 1 timeout /400
+same_policy_roles_swapped_starts level0_both: 170W 140L 88 mutual 2 timeout /400
+same_policy_roles v17_both: 218W 161L 18 mutual 3 timeout /400
+same_policy_roles_swapped_starts v17_both: 239W 141L 16 mutual 4 timeout /400
+policies_swapped_roles level0_bot_v17_player: 240W 139L 20 mutual 1 timeout /400
+near_8_12 v17: 113W 80L 6 mutual 1 timeout /200
+near_8_12 latest1000: 114W 78L 8 mutual 0 timeout /200
+mid_20_30 v17: 104W 92L 4 mutual 0 timeout /200
+mid_20_30 latest1000: 94W 96L 10 mutual 0 timeout /200
+far_40_80 v17: 81W 113L 6 mutual 0 timeout /200
+far_40_80 latest1000: 92W 92L 15 mutual 1 timeout /200
+tick_120fps v17: 102W 98L 0 mutual 0 timeout /200
+tick_120fps latest1000: 104W 92L 4 mutual 0 timeout /200

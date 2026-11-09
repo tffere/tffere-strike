@@ -1,0 +1,9 @@
+{
+  "native/training/audit_frozen_support.hpp": "ead6e57affb2d80e07e1e75fe98f6833ac391ee8151f1ec262c0cde1e70a6100",
+  "native/training/audit_frozen.cpp": "5545d9dc50de6399a4169bba1d73f3b3af4eaca7c6857c2b6aac978259b7a7a1",
+  "native/training/audit_state_aliasing.cpp": "78dea2afd9c20d52d11024993a9cfcd80d73ffdb9984fe5e5422b12364f7e9bc",
+  "native/training/audit_symmetric_duel.cpp": "bbec0ee5bd8036b9d0170fa9252481ce118c02bbcd6f5ede3057950351a5dc50",
+  "native/training/audit_timing.cpp": "0e5c7a967a5380491d63b0219dac3ea838c32d046985c33d6fb5469e30377afb",
+  "native/training/actual_game.hpp": "2b120692be30da532bac8683ea22f77e8f504fc1ce80f56781658260f0443bc9",
+  "native/training/campaign_episode.hpp": "f3b2f464ef1531902c573a5d7bbc6605c1758b6901aeebdebb1101a80687b045"
+}

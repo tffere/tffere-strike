@@ -1,0 +1,1 @@
+100 frozen same-encoded-state snapshots,4 legal one-decision counterfactuals each; no learning

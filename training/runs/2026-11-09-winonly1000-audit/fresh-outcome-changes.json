@@ -1,0 +1,11 @@
+{
+  "loss -> loss": 379,
+  "win -> loss": 58,
+  "loss -> win": 64,
+  "win -> win": 405,
+  "win -> mutual_elimination": 14,
+  "loss -> mutual_elimination": 49,
+  "mutual_elimination -> mutual_elimination": 13,
+  "mutual_elimination -> win": 10,
+  "mutual_elimination -> loss": 8
+}
