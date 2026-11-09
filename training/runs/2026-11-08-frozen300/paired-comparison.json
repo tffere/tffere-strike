@@ -1,0 +1,16 @@
+{
+  "progress": {
+    "gained_wins": 18,
+    "lost_wins": 5,
+    "shared_wins": 30,
+    "mean_win_seconds_on_shared_before": 13.030000000000001,
+    "mean_win_seconds_on_shared_after": 12.716666666666667
+  },
+  "heldout": {
+    "gained_wins": 12,
+    "lost_wins": 4,
+    "shared_wins": 35,
+    "mean_win_seconds_on_shared_before": 13.951428571428572,
+    "mean_win_seconds_on_shared_after": 13.495714285714286
+  }
+}

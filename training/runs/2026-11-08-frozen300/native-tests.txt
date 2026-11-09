@@ -1,0 +1,50 @@
+PASS crouch and deliberate walking tighten spread while sprint and airborne widen it
+PASS firing produces recoverable physical recoil and Alt walking limits speed
+PASS player and bot share weapon specs and resolve lethal shots simultaneously
+PASS visible nearby enemy is fired upon even with a passive learned preference
+PASS trained short-range policy cannot oscillate rifle and sniper
+PASS blocked flank navigates toward flank destination rather than enemy
+PASS masked learning does not bootstrap from forbidden actions
+PASS both versioned bot policies load and differ
+PASS shipped policy loads and drives autonomous decisions
+PASS trained policy switches weapons with delay and tracks sniper ammunition
+PASS trained reload consumes reserve and policy survives restart
+PASS trained hidden-player navigation uses evidence, not live coordinates
+PASS trained firing is blocked by walls and empty magazines
+PASS player crouch lowers eyes without moving feet, slows movement and disables sprint
+PASS crouching avoids low-cover sight and produces quieter footsteps
+PASS footstep sounds follow grounded travel, not held movement keys
+PASS crouch during jump preserves landing height and pause freezes stance
+PASS collapse bends knees before impact and settles in varied grounded poses
+PASS silent hidden player positions cannot influence patrols
+PASS last sight stays fixed until search and patrol replace stale memory
+PASS gunshots are localized once and walls attenuate hearing
+PASS footsteps require actual grounded travel and do not reveal silent players
+PASS bullet marks sit on the nearest hit face and reset each round
+PASS body hits and sky misses do not create wall marks
+PASS vision rejects targets behind, outside cone, or behind cover
+PASS bots turn gradually and cannot fire behind themselves
+PASS shared eye-origin shots clear low cover when the ray is unobstructed
+PASS bots run, jump, land and crouch on staggered action timers
+PASS crouching and airborne hitboxes follow rendered stance
+PASS circle collision, corners, clearance and map limits
+PASS swept movement blocks tunneling and slides along cover
+PASS 3D ray slabs and line of sight account for height
+PASS rifle capacity and cadence are enforced
+PASS reload consumes finite reserve only when completed
+PASS sniper has independent ammo and slow cadence
+PASS movement conventions, diagonal speed and jumping
+PASS body hits eliminate a bot and emit hit events
+PASS headshots and sniper damage differ from body hits
+PASS cover blocks both player bullets and bot attacks
+PASS nearest bot shields a farther bot from a bullet
+PASS scope and switching preserve separate weapon state
+PASS pause freezes movement, bots, reload and round clock
+PASS bots approach, attack with line of sight and cause defeat
+PASS six eliminations win and restart restores all round state
+PASS round expiry loses and large frame times are capped
+PASS heard gunshot routes a patrol around cover into line of sight
+PASS desert spawn and restart preserve the expanded map
+PASS all desert patrol spawns have a continuous walkable route
+PASS identical seeds and inputs reproduce bots and combat
+49/49 tests passed

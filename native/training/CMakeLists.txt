@@ -18,3 +18,6 @@ else()
 endif()
 enable_testing()
 add_test(NAME training-mechanics COMMAND training-tests)
+
+add_executable(campaign-tests campaign_tests.cpp)
+add_test(NAME campaign-metrics COMMAND campaign-tests)

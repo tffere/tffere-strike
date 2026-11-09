@@ -322,6 +322,7 @@ inline std::vector<Obstacle> depotObstacles() {
 
 class Game {
 public:
+    bool aggressiveSearch=false; // Optional broad, evidence-only search for training/runtime experiments.
     Player player{};
     std::array<Bot, 6> bots{};
     std::vector<Obstacle> obstacles = depotObstacles();
@@ -670,21 +671,21 @@ private:
                 }
                 if(!heard && (bot.awareness==Awareness::Chase || bot.awareness==Awareness::Investigate)
                    && (bot.memory<=0 || distance(bot.pos,bot.interest)<1.f)) {
-                    bot.awareness=Awareness::Search;bot.searchRemaining=8.f;
-                    bot.interest=explorePoint(bot.searchCenter,5.f,++bot.searchStep);
+                    bot.awareness=Awareness::Search;bot.searchRemaining=aggressiveSearch?18.f:8.f;
+                    bot.interest=explorePoint(bot.searchCenter,aggressiveSearch?12.f:5.f,++bot.searchStep);
                     bot.navigationCooldown=0;
                 }
                 if(bot.awareness==Awareness::Search) {
                     if(bot.searchRemaining<=0) {bot.awareness=Awareness::Patrol;bot.patrolRemaining=0;}
                     else if(distance(bot.pos,bot.interest)<.8f) {
-                        bot.interest=explorePoint(bot.searchCenter,5.f,++bot.searchStep);
+                        bot.interest=explorePoint(bot.searchCenter,aggressiveSearch?12.f:5.f,++bot.searchStep);
                         bot.navigationCooldown=0;
                     }
                 }
                 if(bot.awareness==Awareness::Patrol &&
                    (bot.patrolRemaining<=0 || distance(bot.pos,bot.interest)<1.f)) {
-                    bot.interest=explorePoint(bot.spawn,26.f,++bot.patrolStep+static_cast<unsigned>(i)*7);
-                    bot.patrolRemaining=12.f;bot.navigationCooldown=0;
+                    bot.interest=explorePoint(aggressiveSearch?Vec2{}:bot.spawn,aggressiveSearch?40.f:26.f,++bot.patrolStep+static_cast<unsigned>(i)*7);
+                    bot.patrolRemaining=aggressiveSearch?8.f+distance(bot.pos,bot.interest)/WALK_SPEED*1.8f:12.f;bot.navigationCooldown=0;
                 }
             }
             const float range=distance(bot.pos,bot.interest);
@@ -770,7 +771,7 @@ private:
             const Vec2 before = bot.pos;
             if (advance && distance(bot.pos,goal) > (trainedBots?.5f:(visible?6.f:.5f))) {
                 const float length = std::hypot(gx, gz);
-                const float pace = (bot.memory>0 && distance(bot.pos,bot.searchCenter)>12 && bot.crouch<.1f ? SPRINT_SPEED : trainedBots&&visible?2.f:WALK_SPEED-2.f*bot.crouch);
+                const float pace = (((bot.memory>0 && distance(bot.pos,bot.searchCenter)>12) || (aggressiveSearch && !visible && distance(bot.pos,goal)>8)) && bot.crouch<.1f ? SPRINT_SPEED : trainedBots&&visible?2.f:WALK_SPEED-2.f*bot.crouch);
                 const float amount = std::min(length, pace * dt);
                 if (length > .001f) moveActor(bot.pos, gx / length * amount, gz / length * amount, obstacles, PLAYER_RADIUS);
             }
