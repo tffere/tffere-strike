@@ -1,0 +1,47 @@
+{
+  "rule": "Most validation wins only; ties prefer baseline then earlier checkpoint. Locked before fresh test.",
+  "selected": {
+    "checkpoint": "cycle4",
+    "validation_wins": 195,
+    "validation_games": 400,
+    "policy_sha256": "7b050fbff7b2794e04f9f9e2476bc6f73691dab1ab02ae141eec8a17df1b717f"
+  },
+  "candidates": [
+    {
+      "checkpoint": "baseline",
+      "validation_wins": 156,
+      "validation_games": 400,
+      "policy_sha256": "2c98e2ef3fc0f2b40a4ef83dc1a9e5f5fa0116314bb180bedcd01507d421282a"
+    },
+    {
+      "checkpoint": "cycle1",
+      "validation_wins": 161,
+      "validation_games": 400,
+      "policy_sha256": "becd5d5e561d51a9fb4414c4067d7a1d6f27121bf00b2a97136e328dfe6c0683"
+    },
+    {
+      "checkpoint": "cycle2",
+      "validation_wins": 145,
+      "validation_games": 400,
+      "policy_sha256": "afcb75070bcc25643ed7fa371d4f66fadcd2f8e55868ab18a12eecd4032cac8e"
+    },
+    {
+      "checkpoint": "cycle3",
+      "validation_wins": 165,
+      "validation_games": 400,
+      "policy_sha256": "3bd6c41ab132ce64353d0cd1c295e546ee739c801e63ef9e4d5d71dc95924767"
+    },
+    {
+      "checkpoint": "cycle4",
+      "validation_wins": 195,
+      "validation_games": 400,
+      "policy_sha256": "7b050fbff7b2794e04f9f9e2476bc6f73691dab1ab02ae141eec8a17df1b717f"
+    },
+    {
+      "checkpoint": "cycle5",
+      "validation_wins": 184,
+      "validation_games": 400,
+      "policy_sha256": "e79315502bf7ac7f5bd524f40cf7770acbede2a41e68bc80b7599a11f7d6f2b1"
+    }
+  ]
+}

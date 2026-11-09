@@ -13,12 +13,21 @@ int main(){try{
     Game hiddenB=hiddenA;hiddenA.player.pos={-20,20};hiddenB.player.pos={20,20};
     for(int n=0;n<30;n++){hiddenA.step(.05f);hiddenB.step(.05f);}
     require(distance(hiddenA.bots[0].pos,hiddenB.bots[0].pos)<.001f&&distance(hiddenA.bots[0].interest,hiddenB.bots[0].interest)<.001f,"Broad search leaked hidden target");
+    Game reactionGame(true);reactionGame.start();reactionGame.obstacles.clear();reactionGame.player.pos={0,8};reactionGame.player.yaw=0;reactionGame.bots[0]=Bot{};
+    training::PlayerOpponent reactionPlayer(false);reactionPlayer.observe(reactionGame);
+    require(!reactionPlayer.input(reactionGame).fire,"AI player bypassed reaction delay");
     auto bot=tactics::initialPolicy(),player=bot,original=player;CampaignConfig c;
     c.freezePlayer=true;c.randomStarts=true;c.wideSearch=true;
+    c.winOnly=true;c.episodicLearning=true;
     std::array<std::mt19937,2> rng{{std::mt19937(12),std::mt19937(13)}};
     auto r=campaignEpisode(bot,player,1100123,true,.2,rng,c);
     require(player.q==original.q&&player.visits==original.visits,"Frozen player learned");
     require(bot.visits!=original.visits,"Bot did not learn");
+    require(r.reward[0]==(r.winner==0?1.:0.)&&r.reward[1]==(r.winner==1?1.:0.),"Non-win reward leaked into win-only mode");
+    for(int state=0;state<tactics::STATES;state++)for(int action=0;action<tactics::ACTIONS;action++){
+        require(bot.visits[state][action]<=1,"Repeated visits overweighted an episode");
+        require(bot.q[state][action]>=0&&bot.q[state][action]<=1,"Win probability outside unit interval");
+    }
     require(distance(r.playerStart,r.botStart)>=8,"Overlapping spawns");
     require(!circleBlocked(r.playerStart,.4f,game.obstacles)&&!circleBlocked(r.botStart,.4f,game.obstacles),"Invalid episode spawn");
     require(r.botHits<=r.shots[0]&&r.botHits>=0,"Hits exceed shots");

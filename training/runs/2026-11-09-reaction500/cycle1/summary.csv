@@ -1,0 +1,2 @@
+cycle,training_games,wins,losses,draws,win_rate,mean_damage,shots,switches,zero_shot_games,timeouts,mutual_eliminations
+1,100,33,50,17,0.33,59.5,230,40,23,0,17

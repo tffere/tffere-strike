@@ -1,0 +1,6 @@
+{
+  "native/gameplay.hpp": "f04896eeb3cbf9cbd76ec780f836005db47b11b36332dd6ad7577613e7d8efb8",
+  "native/training/actual_game.hpp": "58c6ae91fefff4e27d22737b35035cb148d2e0e63774b86d4e075712efa222ca",
+  "native/training/campaign_episode.hpp": "f3b2f464ef1531902c573a5d7bbc6605c1758b6901aeebdebb1101a80687b045",
+  "native/training/train_campaign.cpp": "455e037350ea8ee9d0309fa3a7714bab289fb8200abee2019c39ef08d58e88c1"
+}

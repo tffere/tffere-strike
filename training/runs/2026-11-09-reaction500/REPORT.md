@@ -1,0 +1,3 @@
+# Earlier500 rounds with shared reaction delays and shaped rewards
+
+Five100-round bot-only cycles from previous survival300 final against unchanged Level0. Both have uniform reaction delay mean150ms/SD50ms;25HP rifle, random connected-map starts/headings, real Game::step. Rewards retained damage/survival/time shaping and mutual-death penalty150. Fixed100 wins40→33→44→44→39→34. Separate100 before37wins/62loss/0mutual/1timeout, final32wins/68loss, damage53.5→46.5,taken68→73.75. Regressed; not selected as a demonstrated improvement. Kept as starting lineage for subsequent win-only experiment. Raw logs/configs/policies/checkpoints/50-round summaries preserved. These are separate seeds/rules/reward from older experiments. No frozen-player learning.

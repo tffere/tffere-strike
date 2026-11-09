@@ -1,0 +1,7 @@
+checkpoint,first_round,last_round,games,wins,losses,mutual_eliminations,timeouts,mean_damage,mean_taken,mean_win_seconds,winning_games,shots,hits,hit_fraction,encounters,damage_per_encounter,visible_seconds,visible_without_shot_seconds,ready_visible_without_shot_seconds,mean_first_shot_seconds,rounds_with_shots,zero_shot_rounds,switches,mean_visited_4m_cells
+baseline,1,100,100,40,59,1,0,52,66.5,12.9662,40,310,188,0.606452,146,35.6164,63.95,48.5,0.25,11.6019,77,23,0,6.47
+cycle1,1,100,100,33,50,17,0,59.5,72.25,13.1758,33,230,134,0.582609,121,49.1736,60.25,48.8,0.3,11.4325,77,23,40,6.39
+cycle2,1,100,100,44,53,3,0,61,63.25,13.433,44,310,194,0.625806,107,57.0093,56.85,41.35,0.2,11.4705,78,22,0,6.38
+cycle3,1,100,100,44,53,3,0,61.25,63.25,13.433,44,311,195,0.62701,106,57.783,56.75,41.2,0.2,11.4705,78,22,0,6.38
+cycle4,1,100,100,39,43,18,0,63.25,67.25,13.8192,39,194,142,0.731959,106,59.6698,51.15,41.45,0.25,11.5377,77,23,42,6.24
+cycle5,1,100,100,34,65,1,0,48.75,70.5,12.3662,34,409,189,0.462103,106,45.9906,72.9,52.55,0.15,11.2936,78,22,0,6.47

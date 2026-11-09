@@ -2,6 +2,7 @@
 #include "../gameplay.hpp"
 namespace strike::training {
 struct PlayerOpponent {
+    ReactionDelay reaction{};std::mt19937 reactionRandom{2909};
     bool advanced=false,known=false;Vec2 evidence{},waypoint{},explore{};
     float memory=0,decision=0,navigation=0,switchDelay=0,weaponCommitment=0,targetY=1.1f;
     int action=tactics::Search,forcedAction=-1,decisionState=0;unsigned searchStep=0;
@@ -44,7 +45,7 @@ struct PlayerOpponent {
             switchDelay,weaponCommitment,gun.reloadRemaining,cover,true});
     }
     Input input(Game& game) {
-        bool visible=sees(game);const auto& p=game.player;
+        bool visible=sees(game);if(game.reactionDelays)reaction.update(visible,.05f,reactionRandom);const auto& p=game.player;
         float range=known?distance(p.pos,evidence):40;
         bool covered=known&&!lineOfSight({p.pos.x,p.y,p.pos.z},{evidence.x,1.7f,evidence.z},game.obstacles);
         const auto& gun=game.weapon();
@@ -62,7 +63,7 @@ struct PlayerOpponent {
         if(action==tactics::Sniper&&game.selectedWeapon!=WeaponId::AW9){in.selectAW9=true;switchDelay=.35f;weaponCommitment=2.f;}
         in.reload=action==tactics::Reload;
         bool attack=action==tactics::Shoot||action==tactics::Rifle||action==tactics::Sniper;
-        in.fire=action!=tactics::Reload&&visible&&switchDelay<=0;
+        in.fire=(!game.reactionDelays||reaction.ready())&&action!=tactics::Reload&&visible&&switchDelay<=0;
         bool moving=action==tactics::Hide||action==tactics::Chase||action==tactics::Search||action==tactics::Left||action==tactics::Right;
         if(!known||(attack&&!visible))moving=true;
         Vec2 goal=p.pos;

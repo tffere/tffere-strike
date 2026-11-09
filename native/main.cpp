@@ -312,7 +312,7 @@ int main(int argc,char** argv){
         Graphics gfx(assets.string());strike::Game game(true);game.aggressiveSearch=true;
         auto priorPolicy=strike::tactics::Policy::load((assets/"bot-policy.txt").string());
         auto trainedPolicy=strike::tactics::Policy::load((assets/"bot-policy-trained.txt").string());
-        bool experimentalAI=false;game.useBotPolicy(priorPolicy);buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
+        bool experimentalAI=true;game.useBotPolicy(trainedPolicy);buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
         for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--no-shadows"))gfx.shadows=false;Audio audio(!smoke,assets.string());
         float recoil=0,scope=0,walk=0,switchAnim=0,hitFade=0;
         WeaponId previous=WeaponId::AR7;int frames=0;bool debug=false,blockFire=false;std::vector<Tracer> tracers;
@@ -477,7 +477,7 @@ int main(int argc,char** argv){
                 DrawRectangleGradientV(0,0,int(sw),int(105*ui),{10,17,23,205},{10,17,23,0});
                 DrawRectangleGradientV(0,int(sh-120*ui),int(sw),int(120*ui),{10,17,23,0},{10,17,23,220});
                 text(gfx.font,"TFFERE",30*ui,24*ui,22*ui,PALE,3*ui);text(gfx.font,"STRIKE",139*ui,24*ui,22*ui,SAND,3*ui);
-                text(gfx.font,experimentalAI?"AI: AFTER 900 / EXPERIMENTAL [F5]":"AI: AFTER 300 / BASELINE [F5]",31*ui,53*ui,9*ui,{161,178,183,255},2*ui);
+                text(gfx.font,experimentalAI?"AI: WIN ONLY / SELECTED 400 [F5]":"AI: BEFORE WIN ONLY [F5]",31*ui,53*ui,9*ui,{161,178,183,255},2*ui);
                 center(gfx.font,"SANDSTONE / OLD QUARTER",sw/2,26*ui,11*ui,SAND);
                 center(gfx.font,"ELIMINATE THE PATROL",sw/2,48*ui,15*ui,PALE);
                 int seconds=std::max(0,int(game.timeLeft));

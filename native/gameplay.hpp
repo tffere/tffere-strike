@@ -103,6 +103,19 @@ struct WeaponState {
     }
 };
 
+// Uniform [mean-sqrt(3)*sd, mean+sqrt(3)*sd]: exact population mean/sd,
+// bounded positive delays. A new sight acquisition starts a fresh firing gate.
+struct ReactionDelay {
+    bool visible=false;float remaining=0,sampled=0;
+    void update(bool seen,float dt,std::mt19937& rng){
+        if(!seen){visible=false;remaining=0;return;}
+        if(!visible){sampled=std::uniform_real_distribution<float>(.15f-.05f*1.73205080757f,.15f+.05f*1.73205080757f)(rng);remaining=sampled;}
+        else remaining=std::max(0.f,remaining-std::max(0.f,dt));
+        visible=true;
+    }
+    bool ready()const{return visible&&remaining<=0;}
+};
+
 struct Player {
     Vec2 pos{0, 18};
     float y = EYE_HEIGHT, yaw = 0, pitch = 0, verticalVelocity = 0;
@@ -114,6 +127,7 @@ enum class Awareness { Patrol, Investigate, Chase, Search };
 struct Noise { Vec2 position; float radius; };
 struct Impact { Vec3 point, normal, origin, direction; };
 struct Bot {
+    ReactionDelay reaction{};
     Vec2 pos{}, spawn{};
     int hp = 100;
     float phase = 0, cooldown = 0, shotFlash = 0;
@@ -322,6 +336,7 @@ inline std::vector<Obstacle> depotObstacles() {
 
 class Game {
 public:
+    bool reactionDelays=true;
     bool aggressiveSearch=false; // Optional broad, evidence-only search for training/runtime experiments.
     Player player{};
     std::array<Bot, 6> bots{};
@@ -406,6 +421,7 @@ public:
         return best;
     }
     bool desertMap = false;
+    void seedReaction(unsigned seed){reactionRandom_.seed(seed);}
     explicit Game(bool desert=false):desertMap(desert) {
         if(desertMap)obstacles=desertObstacles();
         resetState();mode=Mode::Ready;
@@ -597,6 +613,7 @@ public:
 private:
     bool combatStep_=false;
     std::array<int,6> queuedBotDamage_{};int queuedPlayerDamage_=0;
+    std::mt19937 reactionRandom_{1907};
     std::mt19937 random_{711};
     void resetState() {
         player = Player{};
@@ -650,6 +667,7 @@ private:
             // the final, visibility-gated shot. Navigation uses remembered evidence.
             const Vec3 target{player.pos.x, player.y, player.pos.z};
             const bool visible = botSees(bot,target,obstacles);
+            if(reactionDelays)bot.reaction.update(visible,dt,reactionRandom_);
             bot.memory = std::max(0.f,bot.memory-dt);
             bot.searchRemaining = std::max(0.f,bot.searchRemaining-dt);
             bot.patrolRemaining = std::max(0.f,bot.patrolRemaining-dt);
@@ -799,7 +817,7 @@ private:
             const float shotYaw=std::atan2(bot.pos.x-player.pos.x,bot.pos.z-player.pos.z);
             const bool aimed=std::abs(std::remainder(shotYaw-bot.yaw-bot.recoilYaw,2*PI))<.15f&&std::abs(desiredPitch-bot.pitch-bot.recoilPitch)<.10f;
             auto& botGun=bot.guns[static_cast<std::size_t>(bot.selected)];
-            if(wantsFire&&finalRange<120&&aimed&&bot.cooldown<=0&&bot.switchRemaining<=0&&
+            if((!reactionDelays||bot.reaction.ready())&&wantsFire&&finalRange<120&&aimed&&bot.cooldown<=0&&bot.switchRemaining<=0&&
                botGun.cooldown<=0&&botGun.reloadRemaining<=0&&botGun.ammo>0&&botSees(bot,target,obstacles)){
                 if(!botGun.fire())continue;
                 bot.shotFlash=bot.selected==WeaponId::AW9?.09f:.055f;

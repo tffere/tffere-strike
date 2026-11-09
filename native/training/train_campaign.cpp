@@ -13,7 +13,9 @@ int main(int argc,char** argv){try{
     std::ifstream cfg(argv[6]);if(!cfg)throw std::runtime_error("Missing config");
     std::string key;double value;double epsilonStart=.30,epsilonEnd=.12;
     while(cfg>>key>>value){
-        if(key=="mutual_penalty")config.mutualPenalty=value;
+        if(key=="win_only")config.winOnly=value!=0;
+        else if(key=="episodic_learning")config.episodicLearning=value!=0;
+        else if(key=="mutual_penalty")config.mutualPenalty=value;
         else if(key=="freeze_player")config.freezePlayer=value!=0;
         else if(key=="random_starts")config.randomStarts=value!=0;
         else if(key=="wide_search")config.wideSearch=value!=0;

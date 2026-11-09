@@ -4,7 +4,7 @@
 #include <set>
 #include <stdexcept>
 struct CampaignConfig {
-    bool freezePlayer=false,randomStarts=false,wideSearch=false;
+    bool freezePlayer=false,randomStarts=false,wideSearch=false,winOnly=false,episodicLearning=false;
     int evaluationGames=20;
     double explorationReward=0,mutualPenalty=5;
     double playerAlphaScale=1;
@@ -68,10 +68,11 @@ inline CampaignResult campaignEpisode(strike::tactics::Policy& botPolicy,strike:
         // Normal spawn timing and all final evaluation starts remain unchanged.
         game.bots[0].yaw=PI;game.bots[0].cooldown=0;
     }
-    training::PlayerOpponent opponent(false);opponent.policy=&playerPolicy;CampaignResult result;
+    game.seedReaction(seed^0x75a13u);
+    training::PlayerOpponent opponent(false);opponent.reactionRandom.seed(seed^0xc129bu);opponent.policy=&playerPolicy;CampaignResult result;
     result.botStart=game.bots[0].pos;result.playerStart=game.player.pos;
     result.botYaw=game.bots[0].yaw;result.playerYaw=game.player.yaw;
-    bool previousVisible=false;std::set<std::pair<int,int>> cells;
+    bool previousVisible=false;std::set<std::pair<int,int>> cells,visitedActions;
     const auto frozenPlayer=playerPolicy.q;const auto frozenVisits=playerPolicy.visits;
 
     while(game.mode==Mode::Playing){
@@ -92,7 +93,7 @@ inline CampaignResult campaignEpisode(strike::tactics::Policy& botPolicy,strike:
             auto botGun=game.bots[0].selected,playerGun=game.selectedWeapon;
             const bool visible=game.botObservation(0).visible;
             const auto& b=game.bots[0];const auto& gun=b.guns[static_cast<int>(b.selected)];
-            const bool ready=b.cooldown<=0&&b.switchRemaining<=0&&gun.cooldown<=0&&gun.reloadRemaining<=0&&gun.ammo>0;
+            const bool ready=(!game.reactionDelays||b.reaction.ready())&&b.cooldown<=0&&b.switchRemaining<=0&&gun.cooldown<=0&&gun.reloadRemaining<=0&&gun.ammo>0;
             if(visible&&!previousVisible)result.encounters++;
             if(visible&&result.firstVisibleSeconds<0)result.firstVisibleSeconds=result.ticks*.05;
             previousVisible=visible;
@@ -110,14 +111,14 @@ inline CampaignResult campaignEpisode(strike::tactics::Policy& botPolicy,strike:
             if(visible){result.visibleSeconds+=.05;if(!fired){result.visibleWithoutShotSeconds+=.05;if(ready)result.readyVisibleWithoutShotSeconds+=.05;}}
             const auto cell=std::make_pair(int(std::floor(game.bots[0].pos.x/4)),int(std::floor(game.bots[0].pos.z/4)));
             const bool newCell=cells.insert(cell).second;
-            if(learning&&newCell&&!visible)reward[0]+=config.explorationReward;
+            if(learning&&!config.winOnly&&newCell&&!visible)reward[0]+=config.explorationReward;
 
             if(frame==0){executed={game.bots[0].tacticalAction,opponent.action};states={game.bots[0].decisionState,opponent.decisionState};}
             std::array<int,2> dealt{{playerHP-game.player.health,hp-game.bots[0].hp}};
             std::array<int,2> changed{{int(botGun!=game.bots[0].selected),int(playerGun!=game.selectedWeapon)}};
             for(int i=0;i<2;i++){
                 result.damage[i]+=dealt[i];result.switches[i]+=changed[i];
-                reward[i]+=config.damage*dealt[i]-config.taken*dealt[1-i]-config.timeCost-config.switchCost*changed[i];
+                if(!config.winOnly)reward[i]+=config.damage*dealt[i]-config.taken*dealt[1-i]-config.timeCost-config.switchCost*changed[i];
             }
             for(auto event:game.events){
                 if(event.type==EventType::BotShot&&event.bot==0)result.shots[0]++;
@@ -127,12 +128,18 @@ inline CampaignResult campaignEpisode(strike::tactics::Policy& botPolicy,strike:
         bool terminal=game.mode!=Mode::Playing;
         if(terminal){result.winner=game.mode==Mode::Draw?-1:game.mode==Mode::Won?1:game.player.health<=0?0:-1;
             result.endReason=game.mode==Mode::Draw?"mutual_elimination":result.winner==-1?"timeout":"elimination";
-            for(int i=0;i<2;i++)reward[i]+=result.winner==-1?(game.mode==Mode::Draw?-config.mutualPenalty:-config.timeout):result.winner==i?config.win:-config.loss;}
-        if(learning){
+            for(int i=0;i<2;i++)reward[i]+=config.winOnly?(result.winner==i?1.:0.):result.winner==-1?(game.mode==Mode::Draw?-config.mutualPenalty:-config.timeout):result.winner==i?config.win:-config.loss;}
+        if(learning&&config.episodicLearning)visitedActions.insert({states[0],executed[0]});
+        if(learning&&!config.episodicLearning){
             auto next=game.botObservation(0);botPolicy.learnMasked(states[0],executed[0],reward[0],next.index(),terminal,game.botActionMask(0),config.alpha,config.gamma);
             auto playerNext=opponent.observation(game);if(!config.freezePlayer)playerPolicy.learnMasked(states[1],executed[1],reward[1],playerNext.index(),terminal,opponent.actionMask(game),config.alpha*config.playerAlphaScale,config.gamma);
         }
         for(int i=0;i<2;i++){result.reward[i]+=reward[i];result.decisions[i]++;}
+    }
+    if(learning&&config.episodicLearning){
+        if(!config.winOnly||!config.freezePlayer)throw std::runtime_error("Episodic learning requires bot-only win reward");
+        const double outcome=result.winner==0?1.:0.;
+        for(auto entry:visitedActions){auto& value=botPolicy.q[entry.first][entry.second];value+=config.alpha*(outcome-value);botPolicy.visits[entry.first][entry.second]++;}
     }
     result.visitedCells=int(cells.size());
     if(config.freezePlayer&&(playerPolicy.q!=frozenPlayer||playerPolicy.visits!=frozenVisits))throw std::runtime_error("Frozen player mutated");

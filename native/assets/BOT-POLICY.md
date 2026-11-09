@@ -1,9 +1,7 @@
 # Strike bot policies — v1.7
 
-Both player and bots use AR-7 body25/head75, shared recoil and normal weapon cadence. Broad evidence-only search is enabled for both F5 bot options. Frozen runtime inference only.
+Default bot-policy-trained.txt is checkpoint400 selected by wins alone during the completed500-round win-only real-map campaign. F5 switches to bot-policy.txt, the exact decision-preserving calibrated starting policy, and restarts. Labels WIN ONLY/SELECTED400 and BEFORE WIN ONLY.
 
-Default bot-policy.txt is the preserved baseline after the first300 rounds under25HP. F5 selects bot-policy-trained.txt, the candidate after900 cumulative rounds under25HP (latest300), and restarts. Historical bot-policy-after-100.txt remains unused.
+Fresh500 tests versus unchanged AI-player Level0: baseline186wins(37.2%), selected238(47.6%), final500229(45.8%). Selected damage61.7 versus54.1, taken58.85 versus68.3. Selected before fresh tests by validation wins only, no damage/time selection. All500 training rounds completed. Report and provenance: training/runs/2026-11-09-winonly500/REPORT.md. No general human/team skill claim.
 
-Latest survival-focused300 fixed progress tests:43→50 wins/100; damage73→65, mutual deaths28→1. Separate final-only100-case test:52→45 wins. Fewer mutual deaths but poorer separate-test winning; candidate stays optional. These are1v1 tests against AI-player Level0, not six-bot human play. Level0 is the unchanged original frozen before-player-policy.txt; it is not used to control the human player.
-
-Reports/models/logs: training/runs/2026-11-08-frozen25-300/REPORT.md and training/runs/2026-11-08-frozen25-next300/REPORT.md and training/runs/2026-11-08-frozen25-survival300/REPORT.md. Before those,300 rounds under36body damage are preserved separately in2026-11-08-frozen300. Do not mix physical-rule/seed changes as learning gains. No Unreal/Blender rebuild or online runtime learning.
+Both sides in training share25body/75head rifle, normal cadence, physical recoil and independent per-encounter uniform reaction delays63.397–236.603ms (mean150,SD50). Runtime human input has no artificial delay; bots have it. Broad search remains evidence-only. Level0 learned weights remain frozen; updated controller rules apply. No runtime online learning. Historical bot-policy-after-100.txt remains unused. No Unreal/Blender rebuild.

@@ -1,0 +1,12 @@
+{
+  "gained_wins": 68,
+  "lost_wins": 16,
+  "discordant_cases": 84,
+  "paired_one_sided_exact_p": 4.271170476862093e-09,
+  "pass_rule": "More wins and paired one-sided exact binomial p < 0.05 on fresh set; no reselection based on fresh results",
+  "gate_passed": true,
+  "baseline_wins": 186,
+  "selected_wins": 238,
+  "test_games": 500,
+  "selected_checkpoint": 400
+}
