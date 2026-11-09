@@ -64,7 +64,7 @@ struct WeaponSpec {
     float baseSpread=.008f,recoilKick=.018f,recoilSide=.004f;
 };
 inline constexpr std::array<WeaponSpec, 2> WEAPON_SPECS{{
-    {"AR-7", 30, 90, 36, 75, .115f, 1.65f, .008f, .018f, .004f},
+    {"AR-7", 30, 90, 25, 75, .115f, 1.65f, .008f, .018f, .004f},
     {"AW-9", 5, 20, 125, 220, 1.35f, 2.5f, .0025f, .060f, .010f}
 }};
 

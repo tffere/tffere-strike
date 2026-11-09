@@ -67,7 +67,7 @@ int main() {
             Game g;g.start();quiet(g);g.obstacles.clear();g.player.pos={0,-8};
             auto& b=g.bots[0];b=Bot{};b.cooldown=0;
             tactics::Policy p;for(auto& row:p.q)row[tactics::Search]=10;g.useBotPolicy(p);
-            g.step(.05f);check(hasEvent(g,EventType::BotShot)&&g.player.health==64,"nearby bot refused to fire");
+            g.step(.05f);check(hasEvent(g,EventType::BotShot)&&g.player.health==75,"nearby bot refused to fire");
         }},
         {"trained short-range policy cannot oscillate rifle and sniper", [] {
             auto file=std::filesystem::path(__FILE__).parent_path()/"assets"/"bot-policy-trained.txt";
@@ -291,7 +291,7 @@ int main() {
             game.obstacles={{0,-.5f,3,.2f,1.5f}};
             check(botSees(b,{0,1.7f,-5},game.obstacles),"eyes should see over cover");
             game.step(.02f);
-            check(hasEvent(game,EventType::BotShot)&&game.player.health==64,"eye-origin bot shot differs from player settings");
+            check(hasEvent(game,EventType::BotShot)&&game.player.health==75,"eye-origin bot shot differs from player settings");
         }},
         {"bots run, jump, land and crouch on staggered action timers", [] {
             Game game; game.start(); game.obstacles.clear(); quiet(game);
@@ -410,11 +410,12 @@ int main() {
             game.obstacles.clear(); quiet(game);
             auto& bot = game.bots[0]; bot.hp = 100; bot.pos = {0, 5};
             aim(game, bot.pos);
-            for (int i = 0; i < 3; ++i) {
+            for (int i = 0; i < 4; ++i) {
+                aim(game, bot.pos);
                 game.weapon().cooldown = 0;
                 check(game.shoot(), "shot did not fire");
             }
-            check(bot.hp == 0 && game.kills == 1 && game.weapon().ammo == 27, "body-hit damage wrong");
+            check(bot.hp == 0 && game.kills == 1 && game.weapon().ammo == 26, "body-hit damage wrong");
             check(game.lastShot.killed && !game.lastShot.headshot, "shot result wrong");
             check(hasEvent(game, EventType::BotHit) && hasEvent(game, EventType::BotKilled), "hit events absent");
         }},
@@ -483,7 +484,7 @@ int main() {
             const float before = distance(bot.pos, game.player.pos);
             game.step(.1f);
             check(distance(bot.pos, game.player.pos) < before, "bot did not approach");
-            check(game.player.health == 64 && hasEvent(game, EventType::BotShot), "bot failed to attack");
+            check(game.player.health == 75 && hasEvent(game, EventType::BotShot), "bot failed to attack");
             game.player.health = 9; bot.cooldown = 0;
             game.step(.15f);
             check(game.mode == Mode::Lost && game.player.health == 0, "bot did not cause defeat");

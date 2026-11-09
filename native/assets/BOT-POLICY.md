@@ -1,11 +1,9 @@
-# Strike bot policies — v1.6
+# Strike bot policies — v1.7
 
-STRIKE_Q_V2: 192 states × 9 high-level actions. Frozen inference only.
+Both player and bots use AR-7 body25/head75, shared recoil and normal weapon cadence. Broad evidence-only search is enabled for both F5 bot options. Frozen runtime inference only.
 
-- `bot-policy-trained.txt`: default, final bot after two additional 100-round real-game dual-learner cycles with shared recoil and accuracy. Label AFTER 200 / RECOIL.
-- `bot-policy.txt`: exact baseline before those 200 rounds under the same recoil rules. F5 switches and restarts the round.
-- `bot-policy-after-100.txt`: historical v1.5 candidate, preserved but unused by v1.6.
+Default bot-policy.txt is the preserved baseline after the first300 rounds under25HP. F5 selects bot-policy-trained.txt, the candidate after600 cumulative rounds under25HP (latest300), and restarts. Historical bot-policy-after-100.txt remains unused.
 
-Both current options scored 5 wins, 14 losses, 1 mutual elimination in the same 20 frozen tests (25%). The extra 200 rounds did not improve these results. Both bot and separate AI-player tables learned, but only the bot table is used in normal human play. See training/runs/2026-11-08-v1.6/REPORT.md and raw artifacts. Shared physical weapon/movement/recoil rules replace the historical weaker bot damage/cadence. Controllers and spawns still differ.
+Latest300 fixed progress tests:40→42 wins/100; damage58→75, taken64.5→67, mutual deaths2→32. Separate final-only100-case test:51→41 wins. More damage but poorer separate-test winning; candidate stays optional. These are1v1 tests against AI-player Level0, not six-bot human play. Level0 is the unchanged original frozen before-player-policy.txt; it is not used to control the human player.
 
-Sensory restrictions, collision, navigation and firing legality remain programmed. No online learning, team-training, Unreal or Blender rebuild is included.
+Reports/models/logs: training/runs/2026-11-08-frozen25-300/REPORT.md and training/runs/2026-11-08-frozen25-next300/REPORT.md. Before those,300 rounds under36body damage are preserved separately in2026-11-08-frozen300. Do not mix physical-rule/seed changes as learning gains. No Unreal/Blender rebuild or online runtime learning.

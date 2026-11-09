@@ -1,15 +1,23 @@
-# Tffere Strike — Native C++ v1.6
+# Tffere Strike — Native C++ v1.7
 
 A standalone Windows desktop FPS written in C++17 with raylib. Play against six bots in a connected desert quarter, choose an AR-7 rifle or AW-9 sniper, use cover, and clear the depot before the round ends.
 
 ## Download and play on Windows
 
-1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.6-Windows-x64.zip).
+1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.7-Windows-x64.zip).
 2. Right-click the ZIP and select **Extract All**. Open the extracted `TffereStrike` folder.
 3. Double-click **TffereStrike.exe**. Keep its `assets` folder beside it.
 4. Click **Deploy into Depot**, or press **Enter**.
 
 No Node.js, npm, Python, browser, or development tools are needed to play. Requires Windows 10/11 x64 with an OpenGL 3.3-capable graphics driver. Extract the whole ZIP; do not run the executable from inside the archive. The executable is not digitally signed.
+
+## v1.7: 25 HP rifle and wider sensory search
+
+AR-7 body damage is **25 HP** for both player and bots (36×0.7 rounded); headshots remain75. Broad search uses world-centered patrol destinations, longer route commitment and sprinting toward distant unseen goals. Lost-contact searches cover a larger area around remembered evidence; hidden live positions never guide routing.
+
+AI-player **Level0** names the original frozen player policy, not a new trained difficulty tier. Two successive300-round campaigns trained only the bot with25HP weapons against Level0, random connected-map spawns and headings. Latest fixed100 tests:40→42 wins, damage58→75, taken64.5→67, mutual eliminations2→32. Separate100 tests:51→41 wins. No overall improvement established; damage rewards encouraged lethal trades. Default remains the preserved baseline after the first300 rounds. F5 selects the clearly labelled AFTER600 experimental candidate and restarts. [Latest report, charts and every50-round statistics](training/runs/2026-11-08-frozen25-next300/REPORT.md).
+
+Earlier v1.6 description below is historical; its36HP damage, default policy labels and measurements do not describe v1.7.
 
 ## v1.6: shared combat rules, recoil and two more training cycles
 
@@ -34,7 +42,7 @@ Five distinct [Kenney concrete-footstep samples](https://kenney.nl/assets/impact
 - Hidden movement without a new audible cue cannot change a bot's target or route. Patrol destinations and starting facing directions are independent of player location. Bots do not share omniscient target information.
 - Shots leave dark, chipped bullet marks on walls, buildings and cover. Marks follow the hit face, project onto visible doors/trim, remain during the round, and clear on restart. The oldest mark is replaced after 256 impacts. Body hits and sky misses do not leave floating marks.
 
-The current Windows package passes 49 native gameplay/pose/policy cases and Microsoft Defender/ClamAV scans. Exact reports, hashes and limitations are bundled under `SCAN-REPORTS/` and recorded in [v1.6 validation](docs/security/v1.6/RECHECK.md). Scan results are not a guarantee of safety. The executable remains unsigned. A graphical Windows playtest is still needed.
+The current Windows package passes 49 native gameplay/pose/policy cases and Microsoft Defender/ClamAV scans. Exact reports, hashes and limitations are bundled under `SCAN-REPORTS/` and recorded in [v1.7 validation](docs/security/v1.7/RECHECK.md). Scan results are not a guarantee of safety. The executable remains unsigned. A graphical Windows playtest is still needed.
 
 For every shipped update, a new version number, Git tag, [GitHub Release](https://github.com/tffere/tffere-strike/releases) and versioned ZIP are preserved. Future patch rebuilds also receive a new version; previous versioned downloads are not overwritten.
 
@@ -45,6 +53,8 @@ Bots now run on approach, turn gradually, perform staggered jumps and crouch dur
 Bots acquire shots within a 120-degree horizontal field of view and fire only after aiming within roughly 10 degrees of the player. Every shot rechecks visibility after movement: the eye-to-player, chest-to-muzzle and muzzle-to-player paths must all be clear of collision objects. In the historical v1.2 release, bots still navigated toward a hidden player; v1.3 replaces this with evidence-based awareness. Jumping stays on navigable ground and does not vault obstacles.
 
 ## Keep previous versions
+
+- [v1.6: shared combat and recoil](https://github.com/tffere/tffere-strike/releases/tag/v1.6)
 
 - [v1.5: historical experimental policy](https://github.com/tffere/tffere-strike/releases/tag/v1.5)
 
@@ -79,7 +89,7 @@ Extract each version into a separate folder. The `v1.0` and `v1.1` Git tags pres
 | M | Mute/unmute sound |
 | F3 | Show performance info |
 | F4 | Toggle shadows |
-| F5 | Switch before / after 200-round bot policy and restart round |
+| F5 | Switch baseline / after600 experimental bot policy and restart round |
 
 ## Included
 
@@ -129,9 +139,9 @@ python3 native/build.py --platform windows --zig /path/to/zig --package
 
 ## Validation
 
-For v1.6, all 49 native gameplay/pose/policy tests pass on Linux and Windows, including hidden-player patrol independence, fixed last-seen memory, search expiry, muffled/discrete sound detection, grounded footsteps, bullet impact positions/caps, field of view, blocked shots, stance hitboxes and navigation. The eight earlier browser prototype tests also pass. The Windows x64 package is built with Visual Studio on a fresh GitHub Windows runner.
+For v1.7, all 49 native gameplay/pose/policy tests pass on Linux and Windows, including hidden-player patrol independence, fixed last-seen memory, search expiry, muffled/discrete sound detection, grounded footsteps, bullet impact positions/caps, field of view, blocked shots, stance hitboxes and navigation. The eight earlier browser prototype tests also pass. The Windows x64 package is built with Visual Studio on a fresh GitHub Windows runner.
 
-A graphical/listening Windows playtest of v1.6 has not been performed in this environment. The earlier v1.1 graphical smoke tests do not validate the new animation. Please try v1.6 on your Windows machine and report movement or rendering issues.
+A graphical/listening Windows playtest of v1.7 has not been performed in this environment. The earlier v1.1 graphical smoke tests do not validate the new animation. Please try v1.7 on your Windows machine and report movement or rendering issues.
 
 Launch with `--smoke-test` for a short graphical check and screenshot, or `--capture` for an initial gameplay view. Normal launches start at the menu.
 

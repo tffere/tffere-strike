@@ -15,3 +15,7 @@ Record new user requests, completed work and unfinished work in `docs/PROJECT-ST
 ## Bot learning protocol
 
 Use the real `strike::Game::step` code for future learning experiments, not the historical simplified Duel simulator. The latest requested protocol is two separate learners (one AI player, one AI game bot) for 100 rounds, followed by 20 frozen tests of the final game bot against the saved original player policy. Save before/after policies and every outcome. Do not count validation or testing as training. Report wins, losses and timeouts separately; a changed policy is not proof of improvement. Do not mix the tactical benchmark score with duel win rate. Retain poor/superseded results with corrections rather than hiding them.
+
+## Latest protocol override
+
+User now names the original frozen player policy AI-player Level0. New campaigns train ONLY the bot against that unchanged policy, with random valid connected-map spawns/headings,100 rounds per cycle repeated3 times. Preserve separate baselines for physical-rule changes and report damage/taken, conditional winning time, hit rate and mutual eliminations, plus10/50-round blocks and frozen tests. Latest AR-7 body damage25/head75 both sides. Do not resume old dual-learner campaigns without instruction.

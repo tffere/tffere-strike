@@ -31,6 +31,7 @@ int main(int argc,char** argv){try{
     }
     if(config.evaluationGames<1)throw std::runtime_error("Invalid evaluation games");
     std::filesystem::copy_file(argv[6],out/"config.txt");
+    std::ofstream(out/"opponent.txt")<<"AI-player Level 0: original frozen before-player-policy; no learning\n";
     bot.save((out/"before-bot.txt").string());player.save((out/"before-player.txt").string());reference.save((out/"reference-player.txt").string());
     std::array<std::mt19937,2> rng{{std::mt19937(970001+cycle*101),std::mt19937(970003+cycle*103)}};
     if(!testOnly){

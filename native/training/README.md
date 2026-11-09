@@ -1,3 +1,7 @@
+# Latest frozen-opponent campaigns
+
+`strike-campaign BOT LEVEL0 LEVEL0 EMPTY_OUT CYCLE CONFIG [test-only]` supports freeze_player,random_starts,wide_search,evaluation_games and metric logs/checkpoints every10. Latest protocol: only bot learns3×100, player Level0 frozen,25HP rifle both sides. See [latest report](../../training/runs/2026-11-08-frozen25-next300/REPORT.md); earlier material below is historical.
+
 # Current v1.6 campaign
 
 Use `strike-campaign BOT PLAYER REFERENCE EMPTY_OUT CYCLE CONFIG [test-only]` after building this CMake project. The latest requested two 100-round real-Game::step cycles and 20-round frozen progress evaluations are documented in [the v1.6 report](../../training/runs/2026-11-08-v1.6/REPORT.md). Separate roles both learn; shared physical rules include normal weapon rates and recoil. No measured improvement: 25% before, after 100 and after 200. F5 in v1.6 switches exact before/after policies. Older commands/results below are historical; do not use the simplified Duel for new learning.

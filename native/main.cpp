@@ -304,15 +304,15 @@ int main(int argc,char** argv){
     for(int i=1;i<argc;i++){if(!std::strcmp(argv[i],"--smoke-test"))smoke=true;if(!std::strcmp(argv[i],"--capture"))capture=true;if(!std::strcmp(argv[i],"--capture-nw")){capture=true;sectorCapture=4;}if(!std::strcmp(argv[i],"--capture-ne")){capture=true;sectorCapture=5;}if(!std::strcmp(argv[i],"--capture-sw")){capture=true;sectorCapture=6;}if(!std::strcmp(argv[i],"--capture-se")){capture=true;sectorCapture=7;}if(!std::strcmp(argv[i],"--capture-long")){capture=true;sectorCapture=1;}if(!std::strcmp(argv[i],"--capture-west")){capture=true;sectorCapture=2;}if(!std::strcmp(argv[i],"--capture-court")){capture=true;sectorCapture=3;}if(!std::strcmp(argv[i],"--bot-capture")){botCapture=true;capture=true;}if(!std::strcmp(argv[i],"--map-capture")){mapCapture=true;capture=true;}}
     std::filesystem::path base=std::filesystem::absolute(argv[0]).parent_path();
     SetTraceLogLevel(LOG_WARNING);SetConfigFlags(FLAG_WINDOW_RESIZABLE|FLAG_MSAA_4X_HINT|FLAG_VSYNC_HINT);
-    InitWindow(1280,720,"Tffere Strike v1.6 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
+    InitWindow(1280,720,"Tffere Strike v1.7 | Sandstone");base=GetApplicationDirectory();rlSetClipPlanes(.05,220);SetWindowMinSize(960,540);SetExitKey(KEY_NULL);SetTargetFPS(smoke?0:120);
     int exitCode=0;
     try{
         std::filesystem::path assets=base/"assets";
         if(!std::filesystem::exists(assets/"materials.png"))assets=std::filesystem::path(GetWorkingDirectory())/"native/assets";
-        Graphics gfx(assets.string());strike::Game game(true);
+        Graphics gfx(assets.string());strike::Game game(true);game.aggressiveSearch=true;
         auto priorPolicy=strike::tactics::Policy::load((assets/"bot-policy.txt").string());
         auto trainedPolicy=strike::tactics::Policy::load((assets/"bot-policy-trained.txt").string());
-        bool experimentalAI=true;game.useBotPolicy(trainedPolicy);buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
+        bool experimentalAI=false;game.useBotPolicy(priorPolicy);buildDesertMap(gfx,game);gfx.light.fovy=90;BotRenderer botArt;WeaponRenderer weaponArt;
         for(int i=1;i<argc;i++)if(!std::strcmp(argv[i],"--no-shadows"))gfx.shadows=false;Audio audio(!smoke,assets.string());
         float recoil=0,scope=0,walk=0,switchAnim=0,hitFade=0;
         WeaponId previous=WeaponId::AR7;int frames=0;bool debug=false,blockFire=false;std::vector<Tracer> tracers;
@@ -477,7 +477,7 @@ int main(int argc,char** argv){
                 DrawRectangleGradientV(0,0,int(sw),int(105*ui),{10,17,23,205},{10,17,23,0});
                 DrawRectangleGradientV(0,int(sh-120*ui),int(sw),int(120*ui),{10,17,23,0},{10,17,23,220});
                 text(gfx.font,"TFFERE",30*ui,24*ui,22*ui,PALE,3*ui);text(gfx.font,"STRIKE",139*ui,24*ui,22*ui,SAND,3*ui);
-                text(gfx.font,experimentalAI?"AI: AFTER 200 / RECOIL [F5]":"AI: BEFORE 200 / RECOIL [F5]",31*ui,53*ui,9*ui,{161,178,183,255},2*ui);
+                text(gfx.font,experimentalAI?"AI: AFTER 600 / EXPERIMENTAL [F5]":"AI: AFTER 300 / BASELINE [F5]",31*ui,53*ui,9*ui,{161,178,183,255},2*ui);
                 center(gfx.font,"SANDSTONE / OLD QUARTER",sw/2,26*ui,11*ui,SAND);
                 center(gfx.font,"ELIMINATE THE PATROL",sw/2,48*ui,15*ui,PALE);
                 int seconds=std::max(0,int(game.timeLeft));

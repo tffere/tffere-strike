@@ -1,0 +1,6 @@
+{
+  "name": "AI-player Level 0",
+  "source": "training/runs/2026-11-08-real-dual/before-player-policy.txt",
+  "policy_sha256": "930a9dff868695ba196c36ab84ca86b2eca209c9dca7bc2ee793687073e4a42e",
+  "learning": false
+}
