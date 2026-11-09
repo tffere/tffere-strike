@@ -68,3 +68,5 @@ Branches restart from the same incumbent. Local branch rounds1–500 are not a s
 ![Validation progress](training-progress.png)
 
 See **[DIAGNOSTIC-REPORT.md](DIAGNOSTIC-REPORT.md)** for tested spawn, model-identity, timestep, role/controller and state-aliasing hypotheses. Raw probe CSVs and reproducible C++ audit tools included in native/training. Original orchestration scripts retain workspace paths for provenance; reproduce individual rounds using each saved config/before policy and strike-campaign. No extra learning was performed by the diagnostics. Frozen-policy evaluation rounds are not training rounds.
+
+Reproduction helper: orchestration/blend_policy.cpp implements the exact affine Q blend and uses a repository-relative include. Compile with a C++17 compiler and supply BASE LEARNED WEIGHT OUTPUT. Original runner scripts retain workspace paths and require adjustments outside the original workspace; all per-block configs and before policies support individual CLI reproduction without those scripts.

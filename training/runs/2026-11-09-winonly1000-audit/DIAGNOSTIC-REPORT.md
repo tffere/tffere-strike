@@ -124,3 +124,7 @@ Build native/training with CMake. Run `strike-frozen-audit INCUMBENT CANDIDATE L
 These measurements are same-build Linux headless tests; they are not a graphical Windows/human playtest. Two headless test suites pass, including timestep-scaled aim limits and unchanged50ms defaults. An independent agent checked model identities,1000 training budget, frozen rewards/seeds, distances, probe summaries and timestep scaling.
 
 ![Hypothesis tests](hypothesis-tests.png)
+
+## Build verification
+
+Audit source commit `d4ae439`. Headless CMake builds and both test suites passed on Linux and Windows: https://github.com/tffere/tffere-strike/actions/runs/42570420559 . Windows native build/gameplay checks also passed: https://github.com/tffere/tffere-strike/actions/runs/42570420555 . This is source/audit verification, not a new game release. The v1.7 tag, downloaded ZIP, runtime code and policy assets remain unchanged.
