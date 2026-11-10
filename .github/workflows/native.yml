@@ -26,7 +26,7 @@ jobs:
           Keep assets next to the executable. No Node.js or browser is needed.
           WASD move, mouse look/fire, 1 rifle, 2 sniper, right-click scope,
           R reload, Space jump, Shift sprint, Ctrl crouch, Alt slow walk,
-          F5 before/after 200-round policy, Escape pause, Enter deploy.
+          F5 expanded V3 / v1.7 baseline, Escape pause, Enter deploy.
           Windows x64 and an OpenGL 3.3 graphics driver are required.
           '@ | Set-Content TffereStrike/READ-ME.txt
       - name: Scan portable game with Microsoft Defender
@@ -39,6 +39,12 @@ jobs:
             if (Test-Path $fallback) { $scanner = Get-Item $fallback }
           }
           if (-not $scanner) { throw 'Microsoft Defender scanner is unavailable; no scan result can be claimed.' }
+          try {
+            Update-MpSignature -ErrorAction Stop | Out-String | Set-Content defender-signature-update.txt
+          } catch {
+            $_ | Out-String | Set-Content defender-signature-update.txt
+            Write-Warning 'Signature update failed; scan status below records the actual definition date.'
+          }
           $status = Get-MpComputerStatus
           $status | Select-Object AMProductVersion, AntivirusSignatureVersion, AntivirusSignatureLastUpdated | Format-List | Out-String | Set-Content defender-scan.txt
           & $scanner.FullName -Scan -ScanType 3 -File "$PWD/TffereStrike" -DisableRemediation 2>&1 | Tee-Object -FilePath defender-scan.txt -Append
@@ -52,3 +58,4 @@ jobs:
           path: |
             TffereStrike/
             defender-scan.txt
+            defender-signature-update.txt

@@ -26,3 +26,7 @@ add_executable(strike-frozen-audit audit_frozen.cpp)
 add_executable(strike-state-audit audit_state_aliasing.cpp)
 add_executable(strike-timing-audit audit_timing.cpp)
 add_executable(strike-symmetric-audit audit_symmetric_duel.cpp)
+
+add_executable(strike-context-trainer train_context.cpp)
+add_executable(context-tests context_tests.cpp)
+add_test(NAME contextual-policy COMMAND context-tests)

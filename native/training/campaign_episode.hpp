@@ -30,7 +30,7 @@ inline std::vector<strike::Vec2> campaignSpawnPool(const std::vector<strike::Obs
     std::vector<strike::Vec2> pool;for(int i:todo)pool.push_back(point(i));return pool;
 }
 struct CampaignResult {
-    int winner=-1,ticks=0;
+    int winner=-1,ticks=0;double stepSeconds=.05;
     const char* endReason="ongoing";
     std::array<int,2> shots{},switches{},damage{},decisions{};
     std::array<double,2> reward{};

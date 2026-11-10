@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 #include "tactical_policy.hpp"
+#include "contextual_policy.hpp"
 
 namespace strike {
 
@@ -141,7 +142,8 @@ struct Bot {
     unsigned patrolStep = 0, searchStep = 0;
     int tacticalAction=tactics::Search, forcedAction=-1;
     float decisionRemaining=0, switchRemaining=0,weaponCommitment=0;
-    int decisionState=0;
+    int decisionState=0,contextState=0,routeAction=-1;
+    unsigned decisionsTaken=0;int contextChoices=0;bool contextRouteChoice=false;float routeRemaining=0;Vec2 routeGoal{};
     WeaponId selected=WeaponId::AR7;
     std::array<WeaponState,2> guns{};
     Bot(){for(int w=0;w<2;w++)guns[w].reset(WEAPON_SPECS[w]);}
@@ -382,9 +384,36 @@ public:
         ++impactSerial;
     }
 
+    bool contextualBots=false;
+    tactics::ContextPolicy contextPolicy{};double contextExploration=0;
     bool trainedBots=false;
     tactics::Policy botPolicy{};
-    void useBotPolicy(const tactics::Policy& policy) { botPolicy=policy;trainedBots=true; }
+    void useBotPolicy(const tactics::Policy& policy) {botPolicy=policy;trainedBots=true;contextualBots=false;}
+    void useContextPolicy(const tactics::ContextPolicy& policy){contextPolicy=policy;botPolicy=policy.parent;trainedBots=contextualBots=true;}
+    void seedContext(unsigned seed){contextRandom_.seed(seed);}
+    tactics::ContextMask contextActionMask(std::size_t index)const{
+        tactics::ContextMask mask{};const auto old=botActionMask(index);for(int a=0;a<tactics::ACTIONS;a++)mask[a]=old[a];
+        const auto& b=bots[index];if(!botObservation(index).known){
+            if(b.routeAction>=tactics::EastRoute&&b.routeAction<tactics::CONTEXT_ACTIONS&&b.routeRemaining>0&&distance(b.pos,b.routeGoal)>1){mask.fill(false);mask[b.routeAction]=true;}
+            else for(int a=tactics::EastRoute;a<tactics::CONTEXT_ACTIONS;a++)mask[a]=true;
+        }
+        return mask;
+    }
+    tactics::ContextObservation botContext(std::size_t index,const tactics::ContextMask& mask)const{
+        const auto& b=bots[index];auto o=botObservation(index);const auto& gun=b.guns[static_cast<int>(b.selected)];
+        const bool ready=(!reactionDelays||b.reaction.ready())&&b.cooldown<=0&&b.switchRemaining<=0&&gun.cooldown<=0&&gun.reloadRemaining<=0&&gun.ammo>0;
+        const Vec2 evidence=o.visible?player.pos:b.searchCenter;const float range=o.known?distance(b.pos,evidence):40;
+        bool aligned=false,facing=false,sniper=false;
+        if(o.visible){float yaw=std::atan2(b.pos.x-player.pos.x,b.pos.z-player.pos.z);auto eye=botEye(b);
+            float feet=std::max(0.f,player.y-player.eyeHeight()),pitch=std::atan2(feet+1.1f-CROUCH_DROP*player.crouch-eye.y,std::max(.001f,range));
+            aligned=std::abs(std::remainder(yaw-b.yaw-b.recoilYaw,2*PI))<.04f&&std::abs(pitch-b.pitch-b.recoilPitch)<.04f;
+            auto forward=viewDirection(player.yaw,0);float dx=b.pos.x-player.pos.x,dz=b.pos.z-player.pos.z;
+            facing=(forward.x*dx+forward.z*dz)/std::max(.001f,range)>.5f;sniper=selectedWeapon==WeaponId::AW9;
+        }
+        const float middle=o.range==0?4.5f:o.range==1?13.5f:24.f;
+        const bool nearCover=mask[tactics::Hide]&&distance(b.pos,botCoverGoal(b))<3.f;
+        return {o,aligned,ready,nearCover,o.known&&range>=middle,facing,sniper,(b.pos.x>=0?1:0)+(b.pos.z>=0?2:0)};
+    }
     tactics::Observation botObservation(std::size_t index) const {
         const auto& b=bots.at(index);
         const Vec3 target{player.pos.x,player.y,player.pos.z};
@@ -613,6 +642,7 @@ public:
 private:
     bool combatStep_=false;
     std::array<int,6> queuedBotDamage_{};int queuedPlayerDamage_=0;
+    std::mt19937 contextRandom_{3911};
     std::mt19937 reactionRandom_{1907};
     std::mt19937 random_{711};
     void resetState() {
@@ -728,6 +758,7 @@ private:
                 if(wasAirborne)events.push_back({EventType::BotFootstep,static_cast<int>(i),bot.selected,bot.pos,1.35f});
                 bot.verticalVelocity = 0;
             }
+            bot.routeRemaining=std::max(0.f,bot.routeRemaining-dt);
             bot.navigationCooldown -= dt;
             bot.switchRemaining=std::max(0.f,bot.switchRemaining-dt);
             bot.weaponCommitment=std::max(0.f,bot.weaponCommitment-dt);
@@ -738,17 +769,23 @@ private:
                 const auto observation=botObservation(i);
                 bot.decisionRemaining-=dt;
                 if(bot.decisionRemaining<=.0001f){
-                    const auto allowed=botActionMask(i);const int oldAction=bot.tacticalAction;
-                    bot.tacticalAction=bot.forcedAction>=0&&bot.forcedAction<tactics::ACTIONS&&allowed[bot.forcedAction]?
-                        bot.forcedAction:botPolicy.greedyMasked(observation,allowed);
-                    bot.decisionState=observation.index();
+                    const int oldAction=bot.tacticalAction;
+                    if(contextualBots){
+                        const auto allowed=contextActionMask(i);const auto context=botContext(i,allowed);bot.contextState=context.index();
+                        bot.contextChoices=0;for(bool value:allowed)bot.contextChoices+=value;bot.contextRouteChoice=bot.contextChoices>1&&allowed[tactics::EastRoute];
+                        bot.tacticalAction=contextPolicy.choose(bot.contextState,allowed,contextExploration,contextRandom_);
+                    }else{
+                        const auto allowed=botActionMask(i);
+                        bot.tacticalAction=bot.forcedAction>=0&&bot.forcedAction<tactics::ACTIONS&&allowed[bot.forcedAction]?bot.forcedAction:botPolicy.greedyMasked(observation,allowed);
+                    }
+                    bot.decisionsTaken++;bot.decisionState=observation.index();
                     if(oldAction!=bot.tacticalAction)bot.navigationCooldown=0;
                     bot.decisionRemaining=.25f;
                 }
                 const int action=bot.tacticalAction;
                 wantsFire=action==tactics::Shoot||action==tactics::Rifle||action==tactics::Sniper;
                 advance=action==tactics::Chase||action==tactics::Hide||action==tactics::Left||
-                        action==tactics::Right||action==tactics::Search;
+                        action==tactics::Right||action==tactics::Search||(contextualBots&&action>=tactics::EastRoute);
                 if(action==tactics::Rifle||action==tactics::Sniper){
                     const auto weapon=action==tactics::Sniper?WeaponId::AW9:WeaponId::AR7;
                     if(weapon!=bot.selected){bot.selected=weapon;bot.switchRemaining=.35f;bot.weaponCommitment=2.f;}
@@ -761,6 +798,17 @@ private:
                         const float d=std::max(.01f,std::hypot(dx,dz)),side=action==tactics::Left?-1.f:1.f;
                         goal={std::clamp(bot.pos.x+side*dz/d*5,-30.f,30.f),std::clamp(bot.pos.z-side*dx/d*5,-30.f,30.f)};
                     }else if(action==tactics::Chase)goal=bot.searchCenter;
+                }
+                if(contextualBots){
+                    if(observation.known){bot.routeRemaining=0;bot.routeAction=-1;}
+                    else if(action>=tactics::EastRoute){
+                        if(bot.routeAction!=action||bot.routeRemaining<=0||distance(bot.pos,bot.routeGoal)<1){
+                            Vec2 anchor=action==tactics::EastRoute?Vec2{25,bot.pos.z>0?-20.f:20.f}:action==tactics::WestRoute?Vec2{-25,bot.pos.z>0?-20.f:20.f}:Vec2{0,bot.pos.z>0?-24.f:24.f};
+                            bot.routeGoal=explorePoint(anchor,6.f,++bot.patrolStep);if(circleBlocked(bot.routeGoal,.4f,obstacles)||distance(navigationWaypoint(bot.pos,bot.routeGoal,obstacles),bot.pos)<.1f)bot.routeGoal=explorePoint(bot.pos,40.f,++bot.patrolStep);
+                            bot.routeAction=action;bot.routeRemaining=8.f+distance(bot.pos,bot.routeGoal)/SPRINT_SPEED*1.8f;bot.navigationCooldown=0;
+                        }
+                        goal=bot.routeGoal;advance=true;wantsFire=false;
+                    }
                 }
                 // An attack command cannot fire at an occluded target. Move
                 // toward remembered evidence to reacquire instead of freezing.

@@ -12,7 +12,7 @@ inline void blockRow(std::ostream& out,int first,const std::vector<CampaignResul
     int wins=0,losses=0,mutual=0,timeouts=0,shots=0,hits=0,encounters=0,withShots=0,switches=0;
     for(const auto& r:a){damage+=r.damage[0];taken+=r.damage[1];cells+=r.visitedCells;wins+=r.winner==0;losses+=r.winner==1;
         mutual+=std::string(r.endReason)=="mutual_elimination";timeouts+=std::string(r.endReason)=="timeout";
-        if(r.winner==0)winSeconds+=r.ticks*.05;
+        if(r.winner==0)winSeconds+=r.ticks*r.stepSeconds;
         if(r.firstShotSeconds>=0){firstSeconds+=r.firstShotSeconds;withShots++;}
         shots+=r.shots[0];hits+=r.botHits;switches+=r.switches[0];encounters+=r.encounters;
         visible+=r.visibleSeconds;idle+=r.visibleWithoutShotSeconds;readyIdle+=r.readyVisibleWithoutShotSeconds;

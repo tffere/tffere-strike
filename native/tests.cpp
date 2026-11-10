@@ -35,6 +35,13 @@ int main() {
     using namespace strike;
     using Test = std::pair<const char*, std::function<void()>>;
     const std::vector<Test> tests{
+        {"expanded V3 asset loads and survives restart with legacy comparison", [] {
+            auto file=std::filesystem::path(__FILE__).parent_path()/"assets"/"bot-policy-context-v3.txt";
+            auto policy=tactics::ContextPolicy::load(file.string());check(!policy.rows.empty(),"expanded candidate has no learned contexts");
+            Game g;g.useContextPolicy(policy);g.start();g.step(.01f);g.restart();
+            check(g.contextualBots&&g.trainedBots&&g.contextPolicy.rows.size()==policy.rows.size(),"restart lost expanded policy");
+            g.useBotPolicy(policy.parent);g.restart();check(!g.contextualBots&&g.trainedBots,"legacy comparison did not switch controllers");
+        }},
         {"reaction delay has requested moments and gates reacquisition", [] {
             std::mt19937 rng(909);double sum=0,square=0;ReactionDelay r;
             for(int i=0;i<100000;i++){r.update(false,.01f,rng);r.update(true,.01f,rng);sum+=r.sampled;square+=r.sampled*r.sampled;check(!r.ready(),"new sight fired immediately");}
