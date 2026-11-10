@@ -1,0 +1,79 @@
+name: Recheck published package
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published version to scan without executing it
+        required: true
+        default: v1.7
+        type: string
+permissions:
+  contents: read
+jobs:
+  defender:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version }}
+          persist-credentials: false
+      - name: Verify exact package and scan with Defender
+        shell: pwsh
+        env:
+          RECHECK_VERSION: ${{ inputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force recheck-reports | Out-Null
+          $result = [ordered]@{ version=$env:RECHECK_VERSION; startedUtc=(Get-Date).ToUniversalTime().ToString('o'); applicationExecuted=$false; completed=$false }
+          $failed = $false
+          try {
+            if ($env:RECHECK_VERSION -notmatch '^v[0-9]+\.[0-9]+(\.[0-9]+)?$') { throw 'Invalid version' }
+            $name = "TffereStrike-$($env:RECHECK_VERSION)-Windows-x64.zip"
+            $package = Join-Path "$PWD/downloads" $name
+            $entry = @(Get-Content downloads/SHA256SUMS.txt | Where-Object { $_ -match ('\s+' + [regex]::Escape($name) + '$') })
+            if ($entry.Count -ne 1) { throw 'Missing or ambiguous package checksum' }
+            $expected = ($entry[0] -split '\s+')[0]
+            $actual = (Get-FileHash $package -Algorithm SHA256).Hash
+            $result.packageSha256 = $actual
+            if ($actual -ne $expected) { throw 'Package checksum mismatch' }
+            $result.packageChecksumMatches = $true
+            try {
+              Update-MpSignature -ErrorAction Stop 4>&1 | Out-File recheck-reports/signature-update.txt
+              $result.signatureUpdateCommandSucceeded = $true
+            } catch {
+              $result.signatureUpdateCommandSucceeded = $false
+              $_ | Out-String | Out-File recheck-reports/signature-update.txt
+            }
+            $status = Get-MpComputerStatus
+            $result.defender = [ordered]@{ product=$status.AMProductVersion; signatures=$status.AntivirusSignatureVersion; signatureLastUpdated=$status.AntivirusSignatureLastUpdated; enabled=$status.AntivirusEnabled }
+            $scanner = Get-ChildItem 'C:/ProgramData/Microsoft/Windows Defender/Platform/*/MpCmdRun.exe' -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+            if (-not $scanner) { $scanner = Get-Item 'C:/Program Files/Windows Defender/MpCmdRun.exe' }
+            & $scanner.FullName -Scan -ScanType 3 -File $package -DisableRemediation 2>&1 | Tee-Object -FilePath recheck-reports/defender-archive.txt
+            $result.archiveScanExitCode = $LASTEXITCODE
+            if ($LASTEXITCODE -ne 0) { throw 'Archive scan reported a threat or scanner error; inspect log' }
+            Expand-Archive $package -DestinationPath recheck-extracted
+            $exe = Join-Path "$PWD/recheck-extracted" 'TffereStrike/TffereStrike.exe'
+            $result.exeSha256 = (Get-FileHash $exe -Algorithm SHA256).Hash
+            $manifest = Get-Content "docs/security/$($env:RECHECK_VERSION)/file-hashes.json" -Raw | ConvertFrom-Json
+            $expectedExe = $manifest.'TffereStrike/TffereStrike.exe'
+            if ($result.exeSha256 -ne $expectedExe) { throw 'Executable checksum mismatch' }
+            $result.exeChecksumMatches = $true
+            $result.authenticodeStatus = (Get-AuthenticodeSignature $exe).Status.ToString()
+            & $scanner.FullName -Scan -ScanType 3 -File "$PWD/recheck-extracted" -DisableRemediation 2>&1 | Tee-Object -FilePath recheck-reports/defender-extracted.txt
+            $result.extractedScanExitCode = $LASTEXITCODE
+            if ($LASTEXITCODE -ne 0) { throw 'Extracted-file scan reported a threat or scanner error; inspect log' }
+            $result.completed = $true
+          } catch {
+            $failed = $true
+            $result.error = $_.ToString()
+            $_ | Out-String | Out-File recheck-reports/error.txt
+          } finally {
+            $result.finishedUtc = (Get-Date).ToUniversalTime().ToString('o')
+            $result | ConvertTo-Json -Depth 6 | Set-Content recheck-reports/result.json
+          }
+          if ($failed) { exit 1 }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published-package-security-recheck
+          path: recheck-reports/
