@@ -1,0 +1,11 @@
+block2 10/100 sparse_rows=123
+block2 20/100 sparse_rows=130
+block2 30/100 sparse_rows=134
+block2 40/100 sparse_rows=141
+block2 50/100 sparse_rows=150
+block2 60/100 sparse_rows=155
+block2 70/100 sparse_rows=161
+block2 80/100 sparse_rows=167
+block2 90/100 sparse_rows=175
+block2 100/100 sparse_rows=182
+RESULT block2: 210/400 wins; rows=182

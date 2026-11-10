@@ -1,0 +1,77 @@
+{
+  "rule": "Highest validation wins only; ties incumbent then earlier. Locked before any fresh test.",
+  "selected": {
+    "name": "block4",
+    "wins": 234,
+    "games": 400,
+    "sha256": "2693d43a69701ce7e7a2fd5eaa7ef139e3daaa072a53f2a63a4aa85c9fdd4f64"
+  },
+  "candidates": [
+    {
+      "name": "baseline-v3",
+      "wins": 201,
+      "games": 400,
+      "sha256": "68c3745297d763d51db919e2a09036399e3688431596a242b58b5a15e9622454"
+    },
+    {
+      "name": "block1",
+      "wins": 193,
+      "games": 400,
+      "sha256": "3feaabf6371331f20fd825ab0ee3aaa634d417a141df89ec941e6120c80df97c"
+    },
+    {
+      "name": "block2",
+      "wins": 210,
+      "games": 400,
+      "sha256": "80dc69073c6c4940cdf79086003048423c77e02f2a2a033b1746790271bd06d4"
+    },
+    {
+      "name": "block3",
+      "wins": 220,
+      "games": 400,
+      "sha256": "b5f7d179276c8a8531876c90e6c732c9af5c9a89e81638c00130e13853974bcd"
+    },
+    {
+      "name": "block4",
+      "wins": 234,
+      "games": 400,
+      "sha256": "2693d43a69701ce7e7a2fd5eaa7ef139e3daaa072a53f2a63a4aa85c9fdd4f64"
+    },
+    {
+      "name": "block5",
+      "wins": 219,
+      "games": 400,
+      "sha256": "6428466d06b23919885a90cf94a422a636395c5dd670f667579321ff61e0bb91"
+    },
+    {
+      "name": "block6",
+      "wins": 225,
+      "games": 400,
+      "sha256": "83b73454863cc4546b52223ff61b28bc5c8170b6f3c0ac5831a3b875b33fc02f"
+    },
+    {
+      "name": "block7",
+      "wins": 225,
+      "games": 400,
+      "sha256": "b125ae4150b5dfe0a32a06a967259ebf281d07fa2a67ca950ba1ccc33085507f"
+    },
+    {
+      "name": "block8",
+      "wins": 224,
+      "games": 400,
+      "sha256": "4bb4b7d12e600f88cdc417fc950eec0ae218d31bc556a0e775ea1574e3a2562d"
+    },
+    {
+      "name": "block9",
+      "wins": 233,
+      "games": 400,
+      "sha256": "b5ab064d575e7d25a1c75c6fb503b75dee185945bd08ec35bdbae1e1c02d055c"
+    },
+    {
+      "name": "block10",
+      "wins": 222,
+      "games": 400,
+      "sha256": "0c947aaf5b983b3958bdd5971dd91a7b7ec16a44225420b61a7f062d3cf3dd02"
+    }
+  ]
+}

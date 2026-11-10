@@ -1,3 +1,9 @@
+# Expanded contextual Q V3 (latest source candidate)
+
+`strike-context-trainer init V2 OUTPUT` inherits the validated V2 policy without changing its initial greedy behavior. `run V3 LEVEL0 EMPTY_OUT CYCLE CONFIG [test-only]` learns/evaluates at120Hz with250msdecisions; `legacy V2 LEVEL0 EMPTY_OUT 0 CONFIG` measures the old policy under identical new timing. Only1win/0otherwise is rewarded. V3has49,152possible states×12actions, sparse context overrides/shared parent priors and three world-only route options. Source/runtime integration uses the actual decision-time context, not a pre-step trainer approximation.
+
+New1000rounds are complete. Selectedcheckpoint400 won574/1000freshcases versus491/1000legacy; meanwinningtimes increased. Full [report, all50-round statistics and reproducible source](../../training/runs/2026-11-10-expanded-q1000/REPORT.md). Native source isv1.8candidate; no newWindowsrelease whilev1.7antivirusalertdetailsarepending. Earlier protocols below are historical.
+
 # Frozen-opponent1000-round audit (latest)
 
 The latest1000 learning rounds did not pass the fresh-test improvement gate. v1.7 stays current. See [experiment report](../../training/runs/2026-11-09-winonly1000-audit/REPORT.md) and [tested hypotheses](../../training/runs/2026-11-09-winonly1000-audit/DIAGNOSTIC-REPORT.md).

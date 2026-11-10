@@ -1,0 +1,20 @@
+{
+  "native/bot_pose.hpp": "a316ee551a4b24d3139fe6f09af75b2ec5b2472ac0d19b3c7d9655a0ab904508",
+  "native/weapon_renderer.hpp": "68dea988c40cfc8d5f36fe121d4aa4f8035c973833204a511a3bbbfd805db116",
+  "native/contextual_policy.hpp": "c25cb5e066eb09763f8675074cd4d2c01a4d58eb9f1eb9d6c077afa7f1d626e1",
+  "native/tactical_policy.hpp": "b27e7bb917a98561874e004829cf36124296b9dee07c7befd0b4611657f4f110",
+  "native/map_layout.hpp": "6e95cf3f57bfc11f57117c8810238fefe496002abc4e25b68997d4bed01ad7f2",
+  "native/lighting.hpp": "a4ab4ca357ded0a52c2d295eee17cd9272cd6d1b608364cf753887f12332fc0f",
+  "native/desert_map.hpp": "d37d2e56fe2fb36ca85d7f29f9225e635153659773b92843942806d777651610",
+  "native/gameplay.hpp": "ea8155444deb22df353f6ee7924ae178bcab01071f70eb1c440c2a39fa93fe4c",
+  "native/bot_renderer.hpp": "cd18eb348d089a58c8791514f245ef936ec251cf815f681c93c46bdfb1cde312",
+  "native/arch_mesh.hpp": "19be67e9ea9a1fe79e1d9a1e5bbaa3fefa26672d807a00c275b895be19e5c3d4",
+  "native/training/audit_frozen_support.hpp": "ead6e57affb2d80e07e1e75fe98f6833ac391ee8151f1ec262c0cde1e70a6100",
+  "native/training/campaign_episode.hpp": "59000904745ec246e55d766cc503eb3f73ce278bdb45375372edd689882d65fe",
+  "native/training/train_context.cpp": "5dd78475907f5c3278978adfe26d43143d76b2a2072c6417034ec9f7b58f2568",
+  "native/training/self_play.hpp": "45517184e0ebc858ecfc8efa0f1ba76dab56b4e06f1d6167d5f410e35e47b8a8",
+  "native/training/campaign_metrics.hpp": "47bc93ff8e00bd6fc4ce183350f5b99e6bdc3390ae062fc7b5d9ec08c0e9e3bb",
+  "native/training/actual_game.hpp": "2b120692be30da532bac8683ea22f77e8f504fc1ce80f56781658260f0443bc9",
+  "native/training/real_dual_episode.hpp": "2efc29af03217a0a33998caafdb5034ee776142d069b5a3255d3f12b0b45f714",
+  "native/training/context_episode.hpp": "93da79b2d5aece74814848b1a49943ce8080c38e6518192de6bf5c96be67f3fe"
+}

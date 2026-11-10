@@ -1,0 +1,2 @@
+first_round,last_round,games,wins,losses,mutual_eliminations,timeouts,mean_damage,mean_taken,mean_win_seconds,winning_games,shots,hits,hit_fraction,encounters,damage_per_encounter,visible_seconds,visible_without_shot_seconds,ready_visible_without_shot_seconds,mean_first_shot_seconds,rounds_with_shots,zero_shot_rounds,switches,mean_visited_4m_cells
+1,400,400,201,197,2,0,64.1875,54.8125,13.297,201,1114,804,0.721724,489,52.5051,194.992,185.717,7.49167,12.0776,318,82,58,6.675

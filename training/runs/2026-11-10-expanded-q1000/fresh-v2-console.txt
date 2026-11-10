@@ -1,0 +1,1 @@
+RESULT block0: 491/1000 wins; rows=0

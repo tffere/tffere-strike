@@ -1,17 +1,22 @@
-# Tffere Strike — Native C++ v1.7
+# Tffere Strike — v1.8 source candidate
 
 A standalone Windows desktop FPS written in C++17 with raylib. Play against six bots in a connected desert quarter, choose an AR-7 rifle or AW-9 sniper, use cover, and clear the depot before the round ends.
 
-## Download and play on Windows
+## Windows release status
 
-1. [Download TffereStrike-Windows-x64.zip](https://github.com/tffere/tffere-strike/raw/refs/heads/main/downloads/TffereStrike-v1.7-Windows-x64.zip).
-2. Right-click the ZIP and select **Extract All**. Open the extracted `TffereStrike` folder.
-3. Double-click **TffereStrike.exe**. Keep its `assets` folder beside it.
-4. Click **Deploy into Depot**, or press **Enter**.
+**v1.8 is a source/model candidate; no new Windows release ZIP has been published.** A reported antivirus alert on v1.7 remains under investigation. Keep any flagged copy quarantined and do not bypass protection. The exact released ZIP matches its manifest; updated Defender rechecks reported no threats, but the antivirus product/detection details are still needed to resolve the alert. [Recheck evidence](docs/security/v1.7/alert-2026-11-10/REPORT.md).
 
-No Node.js, npm, Python, browser, or development tools are needed to play. Requires Windows 10/11 x64 with an OpenGL 3.3-capable graphics driver. Extract the whole ZIP; do not run the executable from inside the archive. The executable is not digitally signed.
+Existing versioned releases remain preserved. A future Windows build requires Windows10/11x64 and OpenGL3.3-capable graphics. Source/gameplay and training checks are separate from a graphical Windows playtest.
 
-## Latest research: additional1000 rounds and benchmark audit
+## v1.8 source: expanded Q table and fine-step learning
+
+The bot now supports **49,152 possible context states ×12actions**, from192×9, with sparse learned rows and parent backoff. New observable context includes own aim/readiness, nearby cover, finer range, visible enemy facing/weapon and own map region. Three new actions choose meaningful reachable east/west/central search routes without hidden-target tracking.
+
+Exactly1,000 new real-map rounds trained only the bot against unchanged AI-player Level0, with win-only reward and120Hz physics/250ms decisions. Cold V3 inherits the V2 baseline exactly. Checkpoint400 was selected before fresh testing: on1,000 fresh matched cases, **491→574 wins (49.1%→57.4%)**, damage61.55→70.075,taken54.65→46.8. Winning rounds slow13.54→20.82s and mutual deaths rise6→56; the objective was wins only. The selected model stores297 detailed learned rows; unvisited contexts reuse shared priors.
+
+Source runtime defaults to expanded V3; **F5** compares the unchanged v1.7 baseline and restarts. This is1v1 evidence against one frozen opponent/map distribution, not a guarantee for human/team matches. [Full report, every50-round statistics, models and source snapshot](training/runs/2026-11-10-expanded-q1000/REPORT.md). [Draft version notes](docs/releases/v1.8-draft.md).
+
+## Earlier research: additional1000 rounds and benchmark audit
 
 The1000-round follow-up did not establish an extra win-rate gain (fresh1000:47.7%→47.9%). **v1.7 remains the default release.** Frozen diagnostics found coarse20Hz benchmark timing differs materially from120Hz play, while the small decision table merges contexts needing different actions. Close starting spawns were not the main explanation. [Full tested hypotheses and raw evidence](training/runs/2026-11-09-winonly1000-audit/DIAGNOSTIC-REPORT.md).
 
@@ -46,7 +51,7 @@ Five distinct [Kenney concrete-footstep samples](https://kenney.nl/assets/impact
 - Hidden movement without a new audible cue cannot change a bot's target or route. Patrol destinations and starting facing directions are independent of player location. Bots do not share omniscient target information.
 - Shots leave dark, chipped bullet marks on walls, buildings and cover. Marks follow the hit face, project onto visible doors/trim, remain during the round, and clear on restart. The oldest mark is replaced after 256 impacts. Body hits and sky misses do not leave floating marks.
 
-The current Windows package passes 50 native gameplay/pose/policy cases and Microsoft Defender/ClamAV scans. Exact reports, hashes and limitations are bundled under `SCAN-REPORTS/` and recorded in [v1.7 validation](docs/security/v1.7/RECHECK.md). Scan results are not a guarantee of safety. The executable remains unsigned. A graphical Windows playtest is still needed.
+The released v1.7 Windows package originally passed 50 native gameplay/pose/policy cases and Microsoft Defender/ClamAV scans. Exact reports, hashes and limitations are bundled under `SCAN-REPORTS/` and recorded in [v1.7 validation](docs/security/v1.7/RECHECK.md). Scan results are not a guarantee of safety. The executable remains unsigned. A graphical Windows playtest is still needed.
 
 For every shipped update, a new version number, Git tag, [GitHub Release](https://github.com/tffere/tffere-strike/releases) and versioned ZIP are preserved. Future patch rebuilds also receive a new version; previous versioned downloads are not overwritten.
 

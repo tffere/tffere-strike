@@ -1,0 +1,16 @@
+{
+  "baseline_wins": 491,
+  "candidate_wins": 574,
+  "games": 1000,
+  "gained_wins": 218,
+  "lost_wins": 135,
+  "paired_one_sided_exact_p": 5.842397840663289e-06,
+  "difference": 0.083,
+  "paired_approx95_ci": [
+    0.04651779929104375,
+    0.11948220070895627
+  ],
+  "passed": true,
+  "selected_before_fresh": "block4",
+  "Windows_publication": "withheld; antivirus alert details unresolved"
+}

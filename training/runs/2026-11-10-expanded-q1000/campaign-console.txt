@@ -1,0 +1,11 @@
+100/1000: validation 193/400 W, 149 L, 42 mutual, damage63.875,taken52.8125
+200/1000: validation 210/400 W, 153 L, 35 mutual, damage68.5625,taken52.1875
+300/1000: validation 220/400 W, 131 L, 47 mutual, damage73.8125,taken49.875
+400/1000: validation 234/400 W, 143 L, 21 mutual, damage72.8125,taken47.4375
+500/1000: validation 219/400 W, 147 L, 32 mutual, damage71.1875,taken50.9375
+600/1000: validation 225/400 W, 148 L, 25 mutual, damage71.4375,taken50
+700/1000: validation 225/400 W, 148 L, 25 mutual, damage70.9375,taken48.9375
+800/1000: validation 224/400 W, 140 L, 34 mutual, damage72.875,taken49.125
+900/1000: validation 233/400 W, 134 L, 31 mutual, damage73.25,taken47.75
+1000/1000: validation 222/400 W, 145 L, 31 mutual, damage71.6875,taken49.625
+Exactly1000 retained campaign learning rounds complete.

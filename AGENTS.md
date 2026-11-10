@@ -23,3 +23,7 @@ User now names the original frozen player policy AI-player Level0. New campaigns
 ## Current completed budget and diagnostics
 
 Latest authorized1000 win-only training rounds are exhausted (two independent500-round branches). Fresh-test gate failed; keep v1.7 current. No further learning without new user instruction. Additional frozen diagnostic tests are not learning. See training/runs/2026-11-09-winonly1000-audit/DIAGNOSTIC-REPORT.md before interpreting live play vs coarse frozen results; future training should align timesteps/context/action freedom, not silently alter benchmark rules and call it a learning gain.
+
+## Nov10 expanded-table authorization is now complete
+
+User authorized a NEW1000-round budget to implement audit hypotheses and expandQ. Exactly1000completed; V3selected400 improvesfresh49.1→57.4% under120Hz. Sourcecandidatev1.8isready, but noWindowsreleaseZIPpublished while user-reportedv1.7antivirusalertdetailsremainunresolved. Latestreports training/runs/2026-11-10-expanded-q1000/ and docs/security/v1.7/alert-2026-11-10/. Current trainingbudgetexhausted; no furtherlearningwithoutnewinstruction. Preservewin-onlyreward and frozenLevel0. Distinguish49,152possible states from297selected sparselearnedrows.

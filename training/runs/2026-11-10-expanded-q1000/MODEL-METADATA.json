@@ -1,0 +1,18 @@
+{
+  "format": "STRIKE_Q_V3",
+  "possible_states": 49152,
+  "actions": 12,
+  "selected_sparse_rows": 297,
+  "final_sparse_rows": 445,
+  "selected_training_round": 400,
+  "campaign_training_rounds": 1000,
+  "base_v2_states": 192,
+  "base_v2_actions": 9,
+  "runtime_source_candidate": "v1.8",
+  "windows_release_published": false,
+  "antivirus_issue": "v1.7 alert details still requested; updated Defender recheck does not establish false positive",
+  "source_candidate_git": "09e1618",
+  "training_executable_sha256": "8542bcfbbb0f30d28cfdf50fab290e53d7352171ccba4cecc0c40c26eb03f824",
+  "selected_policy_sha256": "2693d43a69701ce7e7a2fd5eaa7ef139e3daaa072a53f2a63a4aa85c9fdd4f64",
+  "native_asset_matches_selected": true
+}

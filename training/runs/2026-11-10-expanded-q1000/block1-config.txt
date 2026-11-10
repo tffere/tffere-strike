@@ -1,0 +1,8 @@
+games 100
+evaluation_games 400
+training_seed_base 3700000
+evaluation_seed_base 3800000
+epsilon_start 0.25000000
+epsilon_end 0.22700000
+alpha 0.12
+parent_alpha 0.02

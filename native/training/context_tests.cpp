@@ -20,6 +20,12 @@ int main(){try{
     for(const auto& [state,row]:v3.rows)for(int a=0;a<CONTEXT_ACTIONS;a++)require(row.q[a]>=0&&row.q[a]<=1&&row.visits[a]<=1,"Invalid V3 probability/first-visit count");
     auto tmp=std::filesystem::temp_directory_path()/"strike-v3-test-policy.txt";v3.save(tmp.string());auto loaded=ContextPolicy::load(tmp.string());
     require(loaded.rows.size()==v3.rows.size()&&loaded.parent.q==v3.parent.q&&loaded.routeQ==v3.routeQ,"V3 roundtrip failed");for(const auto& [s,row]:v3.rows)require(loaded.rows.at(s).q==row.q&&loaded.rows.at(s).visits==row.visits,"V3 context counts not persisted");std::filesystem::remove(tmp);
+    {std::ofstream bad(tmp);bad<<"STRIKE_Q_V3 49152 12 49153 2\n";}bool rejected=false;try{ContextPolicy::load(tmp.string());}catch(const std::runtime_error&){rejected=true;}require(rejected,"Oversized V3 header accepted");std::filesystem::remove(tmp);
+    Game contextGame;contextGame.start();contextGame.obstacles.clear();contextGame.player.pos={0,-12};contextGame.player.yaw=PI;for(auto&b:contextGame.bots)b.hp=0;contextGame.bots[0]=Bot{};
+    auto contextMask=contextGame.contextActionMask(0);auto unready=contextGame.botContext(0,contextMask);
+    contextGame.bots[0].reaction.visible=true;contextGame.bots[0].reaction.remaining=0;auto ready=contextGame.botContext(0,contextMask);
+    require(unready.basic.index()==ready.basic.index()&&unready.index()!=ready.index(),"Expanded state fails to separate reaction readiness");
+    contextGame.selectedWeapon=WeaponId::AW9;auto sniper=contextGame.botContext(0,contextMask);require(ready.basic.index()==sniper.basic.index()&&ready.index()!=sniper.index(),"Visible enemy weapon is not contextualized");
     Game hiddenA(true);hiddenA.start();hiddenA.aggressiveSearch=true;hiddenA.useContextPolicy(v3);hiddenA.obstacles={{0,5,66,1,10}};for(auto&b:hiddenA.bots)b.hp=0;hiddenA.bots[0]=Bot{};
     Game hiddenB=hiddenA;hiddenA.player.pos={-20,20};hiddenB.player.pos={20,20};hiddenB.selectedWeapon=WeaponId::AW9;hiddenB.player.yaw=2;
     for(int i=0;i<100;i++){

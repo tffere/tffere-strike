@@ -1,0 +1,54 @@
+{
+  "budget": 1000,
+  "training_rounds_per_block": 100,
+  "blocks": 10,
+  "lineage": "One continuousV3 lineage initialized from validated v1.7 selected400",
+  "capacity": {
+    "base_states": 192,
+    "context_states": 49152,
+    "actions": 12,
+    "sparse_context_rows": true,
+    "parent_backoff_strength": 2
+  },
+  "feature_bits": [
+    "aim_aligned",
+    "fire_ready",
+    "cover_within3m",
+    "finer_range",
+    "visible_enemy_facing_bot",
+    "visible_enemy_sniper"
+  ],
+  "own_map_regions": 4,
+  "added_actions": [
+    "east_route",
+    "west_route",
+    "cross_route"
+  ],
+  "simulation_step_seconds": 0.008333333333333333,
+  "high_level_decision_seconds": 0.25,
+  "reward": "1win,0allother; first-visit episodic MC; no shaping/discount",
+  "training_seeds": [
+    3700100,
+    3701099
+  ],
+  "validation_seeds": [
+    3800000,
+    3800399
+  ],
+  "fresh_test_seeds": [
+    4000000,
+    4000999
+  ],
+  "frozen_sha256": "930a9dff868695ba196c36ab84ca86b2eca209c9dca7bc2ee793687073e4a42e",
+  "starting_v2_sha256": "e10b643bdf7688eeab753ea1ddeb7daaae0856def42fc74f5bb64b03a03b3963",
+  "selection": "Highest validation wins among inherited V3baseline and ten100-round checkpoints; ties incumbent/earlier. Lock before fresh tests.",
+  "fresh_gate": "Strictly more wins and paired one-sided exact binomial p<0.05 on1000fresh cases; otherwise retain v1.7",
+  "publishing": "No Windows package published while user antivirus alert detail remains unresolved",
+  "source_sha256": {
+    "native/gameplay.hpp": "ea8155444deb22df353f6ee7924ae178bcab01071f70eb1c440c2a39fa93fe4c",
+    "native/contextual_policy.hpp": "c25cb5e066eb09763f8675074cd4d2c01a4d58eb9f1eb9d6c077afa7f1d626e1",
+    "native/training/context_episode.hpp": "93da79b2d5aece74814848b1a49943ce8080c38e6518192de6bf5c96be67f3fe",
+    "native/training/train_context.cpp": "5dd78475907f5c3278978adfe26d43143d76b2a2072c6417034ec9f7b58f2568",
+    "native/training/actual_game.hpp": "2b120692be30da532bac8683ea22f77e8f504fc1ce80f56781658260f0443bc9"
+  }
+}
