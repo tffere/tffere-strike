@@ -1,0 +1,1 @@
+2026-11-10: Official ClamAV daily.cvd HTTPS metadata request returned HTTP403 (CDN/Cloudflare). No updated definitions were obtained. Recheck used existing verified official databases main63,daily28177,bytecode339. Zero detections does not establish safety or resolve a user-specific antivirus alert.

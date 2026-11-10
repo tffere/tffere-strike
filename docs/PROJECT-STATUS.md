@@ -111,3 +111,9 @@ State capacity test100 deliberatelysameencoded130 snapshots×4 one-decisioncount
 Added headless-only audit tools and generalized PlayerOpponent.observe/input(dt=.05) for fine-step diagnosticfairness: timers, reaction andaimlimitcorrectlyscaled. Default50msbehavior preserved;50goldenepisodesmatchoutcomes/ticks/damage/shots. Testsinclude dt-scaledaim. Nextrecommended: training/eval120Hzwith250msdecisions, richerobservations andmeaningfullearnablesearchchoices, retainwin-onlyrewardandfreshgate. Do NOT runmorelearningwithoutnewauthorization;1000completed. v1.7 release54e1205 remains current.
 
 Audit source d4ae439 passed Linux+Windows headless builds and2 tests (CI42570420559), plus Windows native build/gameplay checks (CI42570420555). Full report and archives pushed; no new release or policy replacement. v1.7 remains current.
+
+## v1.7 antivirus alert Nov10; expansion work newly authorized
+
+User reportsv1.7virus. Keepquarantined/no bypass; requested AVproduct/exactname/path asynchronously, not yet supplied. ExactpublicZIP freshlydownloaded matchesall17runtimehashes. NewDefenderUpdate-MpSignature succeeded, signatures1.463.220.0 updatedNov9, archive/extracted scans0, unsignedEXE. CI42761632741; reports docs/security/v1.7/alert-2026-11-10/. ClamAVavailableNov8definitions0detections; officialupdateHTTP403, notlatest. No false-positive conclusion, no executable run or replacementrelease.
+
+User then explicitly authorized implementing audit hypotheses, expandingQtable, and NEW1000traininground budget. Proceed with source/headless-only work; frozenLevel0weights unchanged, win-onlyreward; finer timestep and richer context/search choices. Do not conflate antivirus investigation with newcandidate quality or automatically publish another flagged Windows package.
