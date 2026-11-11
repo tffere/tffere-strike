@@ -4,7 +4,7 @@ A standalone Windows desktop FPS written in C++17 with raylib. Play against six 
 
 ## Windows release status
 
-[Download v1.8 for Windows x64](https://github.com/tffere/tffere-strike/releases/download/v1.8/TffereStrike-v1.8-Windows-x64.zip). Extract the whole ZIP and run `TffereStrike/TffereStrike.exe` with its assets folder beside it. Windows 10/11 x64 and OpenGL 3.3 are required. [Checksums](https://github.com/tffere/tffere-strike/releases/download/v1.8/TffereStrike-v1.8-SHA256SUMS.txt).
+[Download v1.8 for Windows x64](https://github.com/tffere/tffere-strike/raw/refs/tags/v1.8/downloads/TffereStrike-v1.8-Windows-x64.zip). Extract the whole ZIP and run `TffereStrike/TffereStrike.exe` with its assets folder beside it. Windows 10/11 x64 and OpenGL 3.3 are required. [Checksums](https://github.com/tffere/tffere-strike/raw/refs/tags/v1.8/downloads/TffereStrike-v1.8-SHA256SUMS.txt).
 
 Windows gameplay tests passed. Updated Defender and ClamAV scans reported no threats; the executable remains unsigned. The original v1.7 antivirus alert remains unresolved without its exact detection details. Do not bypass protection on a flagged download. [v1.8 security review](docs/security/v1.8/RECHECK.md). Graphical Windows playtesting remains outstanding; older versioned releases are preserved.
 

@@ -133,3 +133,5 @@ NO v1.8WindowsreleaseZIPornewtagpublished whilev1.7AVproduct/exactdetectiondetai
 ## v1.8 export requested and completed
 
 User explicitly requested investigating safety and exporting v1.8 now, superseding the earlier packaging hold. Fresh Windows MSVC build from c111371 passed gameplay tests and Defender (updated signatures1.463.235.0), run42960034600. Independently refreshed ClamAV daily28179/main63/bytecode339 scanned runtime folder and finalZIP: zero infected/exit0. Exact hashes/logs under docs/security/v1.8. All source assets verified against package, CRC passed. No additional learning; selectedV3checkpoint400 remains default. New versioned ZIP/checksums, tag and releasev1.8 preserve older releases. Unsigned EXE; no graphical Windows playtest. Originalv1.7alert still unresolved without product/detection/path; no claim of verified fix/falsepositive or guaranteed safety.
+
+Release attachment uploads returned HTTP401 from uploads.github.com despite successful Git push/tag/release API. v1.8 release page links directly to the ZIP/checksums already committed at immutable v1.8 tag. No tag moved or older asset replaced.
