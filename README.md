@@ -1,12 +1,12 @@
-# Tffere Strike — v1.8 source candidate
+# Tffere Strike — v1.8
 
 A standalone Windows desktop FPS written in C++17 with raylib. Play against six bots in a connected desert quarter, choose an AR-7 rifle or AW-9 sniper, use cover, and clear the depot before the round ends.
 
 ## Windows release status
 
-**v1.8 is a source/model candidate; no new Windows release ZIP has been published.** A reported antivirus alert on v1.7 remains under investigation. Keep any flagged copy quarantined and do not bypass protection. The exact released ZIP matches its manifest; updated Defender rechecks reported no threats, but the antivirus product/detection details are still needed to resolve the alert. [Recheck evidence](docs/security/v1.7/alert-2026-11-10/REPORT.md).
+[Download v1.8 for Windows x64](https://github.com/tffere/tffere-strike/releases/download/v1.8/TffereStrike-v1.8-Windows-x64.zip). Extract the whole ZIP and run `TffereStrike/TffereStrike.exe` with its assets folder beside it. Windows 10/11 x64 and OpenGL 3.3 are required. [Checksums](https://github.com/tffere/tffere-strike/releases/download/v1.8/TffereStrike-v1.8-SHA256SUMS.txt).
 
-Existing versioned releases remain preserved. A future Windows build requires Windows10/11x64 and OpenGL3.3-capable graphics. Source/gameplay and training checks are separate from a graphical Windows playtest.
+Windows gameplay tests passed. Updated Defender and ClamAV scans reported no threats; the executable remains unsigned. The original v1.7 antivirus alert remains unresolved without its exact detection details. Do not bypass protection on a flagged download. [v1.8 security review](docs/security/v1.8/RECHECK.md). Graphical Windows playtesting remains outstanding; older versioned releases are preserved.
 
 ## v1.8 source: expanded Q table and fine-step learning
 

@@ -1,0 +1,14 @@
+Wed Nov 11 04:34:26 2026 -> ClamAV update process started at Wed Nov 11 04:34:26 2026
+WARNING: Wed Nov 11 04:34:26 2026 -> Can't query current.cvd.clamav.net
+WARNING: Wed Nov 11 04:34:26 2026 -> Invalid DNS reply. Falling back to HTTP mode.
+Wed Nov 11 04:34:26 2026 -> Trying to retrieve CVD header from https://database.clamav.net/daily.cvd
+Wed Nov 11 04:34:26 2026 -> OK
+Wed Nov 11 04:34:26 2026 -> daily database available for update (local version: 28177, remote version: 28179)
+Wed Nov 11 04:34:28 2026 -> Testing database: '/workspace/work/strike-security/db/tmp.4d3ab132e5/daily.cld' ...
+WARNING: Wed Nov 11 04:34:28 2026 -> [LibClamAV] Failed to create a new code-signature verifier: Can't verify: Invalid certs directory '/usr/local/etc/certs': No such file or directory (os error 2)
+ERROR: Wed Nov 11 04:34:28 2026 -> Failed to load new database: Broken or not a CVD file
+WARNING: Wed Nov 11 04:34:28 2026 -> Database load exited with "Test failed"
+ERROR: Wed Nov 11 04:34:28 2026 -> Database test FAILED.
+ERROR: Wed Nov 11 04:34:28 2026 -> Unexpected error when attempting to update daily: Test failed
+ERROR: Wed Nov 11 04:34:28 2026 -> Database update process failed: Test failed
+ERROR: Wed Nov 11 04:34:28 2026 -> Update failed.

@@ -1,0 +1,2 @@
+34fb0cecdda97abcc9fe1c221cba25990fea9dd9b02d2be715a01db5ff330766  TffereStrike-v1.8-Windows-x64.zip
+b4f23a79c9d852ca5cccf1d7e9fb6fe5817d9b0e4fb7719d4bc0662bd35b2d42  TffereStrike/TffereStrike.exe

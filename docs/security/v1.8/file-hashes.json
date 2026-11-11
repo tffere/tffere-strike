@@ -1,0 +1,21 @@
+{
+  "LICENSE-raylib.txt": "355bdd50936805f62f091da289f7ba467ea0711586a464ad755dcc73dcfb52a8",
+  "READ-ME.txt": "772566a9c8d0aa1bacc748b5a2d6b1ab74dd08e3cd2033e27c4b7abc7864ca1f",
+  "SECURITY.txt": "d16ced2fd6c94cb3a35b248744238f780adfa882d90ffcaf0d595fcc9dcf3bea",
+  "TffereStrike.exe": "b4f23a79c9d852ca5cccf1d7e9fb6fe5817d9b0e4fb7719d4bc0662bd35b2d42",
+  "assets/BOT-POLICY.md": "51cd68dc665c9786c275ec1a8e7e577571caa7eaf5f1431143fc711d507e8b3a",
+  "assets/FONT-LICENSE.txt": "baa2e5e5cdb29e9052bbe4e171b2feb4b3314116ef9032fe11bd874c803cc815",
+  "assets/bot-policy-after-100.txt": "b39297e219874d0b7f93cf12a092784f91421822453295d8d70807e5a6173f97",
+  "assets/bot-policy-context-v3.txt": "2238361433f1336d2ad0b3fa0dfa19d90e32f110d455f05a4d7ed0a1cb1680c9",
+  "assets/bot-policy-trained.txt": "5a3c417aef1bffe9065a669e354e421535bc28ac5d21e55cd4c7a40d99f8dcac",
+  "assets/bot-policy.txt": "483605306754108c4e284cc5dbe0d2a4c9e96d00735c02ca713da8c86a81f2a8",
+  "assets/footsteps/LICENSE.txt": "efa0c4e91c9274f1715248b88a93606e743898b32453c2b1e38f3abed8de8fcb",
+  "assets/footsteps/SHA256SUMS.json": "a323daea304b2f99207660b18ee7969b71e2ec11dea819035ab8dc44d2375f05",
+  "assets/footsteps/footstep_concrete_000.ogg": "d7267e183067757c92c169de2a379abea592cfca6b39bb2e8feea15221ad79fe",
+  "assets/footsteps/footstep_concrete_001.ogg": "507a75eb19b897087855a3be3cf11a12d7fa37d143ad535eeebe0b8031c7325d",
+  "assets/footsteps/footstep_concrete_002.ogg": "b21fa546d74941196b25da8a20b7010abd8c05c4fcf93545d1f344e66a664e13",
+  "assets/footsteps/footstep_concrete_003.ogg": "8b513c2f0316324060b9174b8f28df6c2147418c506e6a53b77f18e149a5547b",
+  "assets/footsteps/footstep_concrete_004.ogg": "24dd8db2413e5b81ad181e1205c12a1c7801da5f85715d471b92a4b2f632e45e",
+  "assets/interface.ttf": "57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e",
+  "assets/materials.png": "182c391509ed933018116780db3c198581f503c4df51c2be7e654332f1207998"
+}

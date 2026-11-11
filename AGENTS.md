@@ -27,3 +27,7 @@ Latest authorized1000 win-only training rounds are exhausted (two independent500
 ## Nov10 expanded-table authorization is now complete
 
 User authorized a NEW1000-round budget to implement audit hypotheses and expandQ. Exactly1000completed; V3selected400 improvesfresh49.1→57.4% under120Hz. Sourcecandidatev1.8isready, but noWindowsreleaseZIPpublished while user-reportedv1.7antivirusalertdetailsremainunresolved. Latestreports training/runs/2026-11-10-expanded-q1000/ and docs/security/v1.7/alert-2026-11-10/. Current trainingbudgetexhausted; no furtherlearningwithoutnewinstruction. Preservewin-onlyreward and frozenLevel0. Distinguish49,152possible states from297selected sparselearnedrows.
+
+## v1.8 export override
+
+User subsequently requested investigating safety and exporting v1.8 now. New scanned Windows package is authorized; see docs/security/v1.8/RECHECK.md and docs/releases/v1.8.md. Prior packaging hold is superseded. Original antivirus alert remains unresolved; do not claim a verified malware fix, guaranteed safety or recommend bypassing protection. Training budget remains exhausted.

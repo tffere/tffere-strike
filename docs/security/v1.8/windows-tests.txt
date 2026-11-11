@@ -1,0 +1,11 @@
+windows	Test gameplay	﻿2026-11-11T04:34:41.6737046Z ##[group]Run ctest --test-dir native-build -C Release --output-on-failure
+windows	Test gameplay	2026-11-11T04:34:41.6737530Z [36;1mctest --test-dir native-build -C Release --output-on-failure[0m
+windows	Test gameplay	2026-11-11T04:34:41.6790796Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+windows	Test gameplay	2026-11-11T04:34:41.6791086Z ##[endgroup]
+windows	Test gameplay	2026-11-11T04:34:42.3647285Z Test project D:/a/tffere-strike/tffere-strike/native-build
+windows	Test gameplay	2026-11-11T04:34:42.3958431Z     Start 1: gameplay
+windows	Test gameplay	2026-11-11T04:34:42.5077281Z 1/1 Test #1: gameplay .........................   Passed    0.11 sec
+windows	Test gameplay	2026-11-11T04:34:42.5089751Z 
+windows	Test gameplay	2026-11-11T04:34:42.5089876Z 100% tests passed out of 1
+windows	Test gameplay	2026-11-11T04:34:42.5090276Z 
+windows	Test gameplay	2026-11-11T04:34:42.5090715Z Total Test time (real) =   0.14 sec

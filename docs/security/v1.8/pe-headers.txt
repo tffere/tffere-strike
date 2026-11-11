@@ -1,0 +1,307 @@
+
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/TffereStrike.exe:     file format pei-x86-64
+
+Characteristics 0x22
+	executable
+	large address aware
+
+Time/Date		Wed Nov 11 04:34:41 2026
+Magic			020b	(PE32+)
+MajorLinkerVersion	14
+MinorLinkerVersion	51
+SizeOfCode		0000000000108800
+SizeOfInitializedData	0000000000078200
+SizeOfUninitializedData	0000000000000000
+AddressOfEntryPoint	00000000000d4c80
+BaseOfCode		0000000000001000
+ImageBase		0000000140000000
+SectionAlignment	00001000
+FileAlignment		00000200
+MajorOSystemVersion	6
+MinorOSystemVersion	0
+MajorImageVersion	0
+MinorImageVersion	0
+MajorSubsystemVersion	6
+MinorSubsystemVersion	0
+Win32Version		00000000
+SizeOfImage		00186000
+SizeOfHeaders		00000400
+CheckSum		00000000
+Subsystem		00000002	(Windows GUI)
+DllCharacteristics	00008160
+					HIGH_ENTROPY_VA
+					DYNAMIC_BASE
+					NX_COMPAT
+					TERMINAL_SERVICE_AWARE
+SizeOfStackReserve	0000000000100000
+SizeOfStackCommit	0000000000001000
+SizeOfHeapReserve	0000000000100000
+SizeOfHeapCommit	0000000000001000
+LoaderFlags		00000000
+NumberOfRvaAndSizes	00000010
+
+The Data Directory
+Entry 0 0000000000000000 00000000 Export Directory [.edata (or where ever we found it)]
+Entry 1 000000000015dfb4 00000078 Import Directory [parts of .idata]
+Entry 2 0000000000183000 000001e0 Resource Directory [.rsrc]
+Entry 3 0000000000178000 00009ae0 Exception Directory [.pdata]
+Entry 4 0000000000000000 00000000 Security Directory
+Entry 5 0000000000184000 00001030 Base Relocation Directory [.reloc]
+Entry 6 000000000014eae0 0000001c Debug Directory
+Entry 7 0000000000000000 00000000 Description Directory
+Entry 8 0000000000000000 00000000 Special Directory
+Entry 9 0000000000000000 00000000 Thread Storage Directory [.tls]
+Entry a 000000000014e9a0 00000140 Load Configuration Directory
+Entry b 0000000000000000 00000000 Bound Import Directory
+Entry c 000000000010a000 000006e0 Import Address Table Directory
+Entry d 0000000000000000 00000000 Delay Import Directory
+Entry e 0000000000000000 00000000 CLR Runtime Header
+Entry f 0000000000000000 00000000 Reserved
+
+There is an import table in .rdata at 0x14015dfb4
+
+The Import Tables (interpreted .rdata section contents)
+ vma:            Hint    Time      Forward  DLL       First
+                 Table   Stamp     Chain    Name      Thunk
+ 0015dfb4	0015e6f8 00000000 00000000 0015e732 0010a6c8
+
+	DLL Name: WINMM.dll
+	vma:     Ordinal  Hint  Member-Name  Bound-To
+	0010a6c8  <none>  0087  timeEndPeriod
+	0010a6d0  <none>  0086  timeBeginPeriod
+
+ 0015dfc8	0015e0a0 00000000 00000000 0015ea0a 0010a070
+
+	DLL Name: KERNEL32.dll
+	vma:     Ordinal  Hint  Member-Name  Bound-To
+	0010a070  <none>  0292  GetLastError
+	0010a078  <none>  0486  QueryPerformanceCounter
+	0010a080  <none>  0487  QueryPerformanceFrequency
+	0010a088  <none>  0561  SetEvent
+	0010a090  <none>  0505  ResetEvent
+	0010a098  <none>  04f1  ReleaseSemaphore
+	0010a0a0  <none>  062a  WaitForSingleObject
+	0010a0a8  <none>  00db  CreateEventA
+	0010a0b0  <none>  010e  CreateSemaphoreW
+	0010a0b8  <none>  0114  CreateThread
+	0010a0c0  <none>  05ac  SetThreadPriority
+	0010a0c8  <none>  01d9  FreeLibrary
+	0010a0d0  <none>  02e2  GetProcAddress
+	0010a0d8  <none>  03f9  LoadLibraryA
+	0010a0e0  <none>  0651  WideCharToMultiByte
+	0010a0e8  <none>  0306  GetStartupInfoW
+	0010a0f0  <none>  02aa  GetModuleHandleW
+	0010a0f8  <none>  0369  GlobalAlloc
+	0010a100  <none>  0370  GlobalFree
+	0010a108  <none>  05a5  SetThreadExecutionState
+	0010a110  <none>  0428  MultiByteToWideChar
+	0010a118  <none>  039a  InitializeCriticalSection
+	0010a120  <none>  015c  EnterCriticalSection
+	0010a128  <none>  03f5  LeaveCriticalSection
+	0010a130  <none>  0134  DeleteCriticalSection
+	0010a138  <none>  05ef  TlsAlloc
+	0010a140  <none>  05f1  TlsGetValue
+	0010a148  <none>  05f3  TlsSetValue
+	0010a150  <none>  05f0  TlsFree
+	0010a158  <none>  0614  VerSetConditionMask
+	0010a160  <none>  02a9  GetModuleHandleExW
+	0010a168  <none>  01d5  FormatMessageW
+	0010a170  <none>  01d8  FreeEnvironmentStringsW
+	0010a178  <none>  0267  GetEnvironmentStringsW
+	0010a180  <none>  02cb  GetOEMCP
+	0010a188  <none>  01e0  GetACP
+	0010a190  <none>  03c3  IsValidCodePage
+	0010a198  <none>  0598  SetStdHandle
+	0010a1a0  <none>  0388  HeapReAlloc
+	0010a1a8  <none>  04ab  ReadConsoleW
+	0010a1b0  <none>  056e  SetFilePointerEx
+	0010a1b8  <none>  027d  GetFileSizeEx
+	0010a1c0  <none>  022a  GetConsoleMode
+	0010a1c8  <none>  022e  GetConsoleOutputCP
+	0010a1d0  <none>  01cd  FlushFileBuffers
+	0010a1d8  <none>  0180  EnumSystemLocalesW
+	0010a1e0  <none>  034e  GetUserDefaultLCID
+	0010a1e8  <none>  03c5  IsValidLocale
+	0010a1f0  <none>  0296  GetLocaleInfoW
+	0010a1f8  <none>  03e9  LCMapStringW
+	0010a200  <none>  00b8  CompareStringW
+	0010a208  <none>  00a2  CloseHandle
+	0010a210  <none>  03fb  LoadLibraryExW
+	0010a218  <none>  061f  VirtualProtect
+	0010a220  <none>  0385  HeapFree
+	0010a228  <none>  0381  HeapAlloc
+	0010a230  <none>  0600  UnhandledExceptionFilter
+	0010a238  <none>  03b5  IsDebuggerPresent
+	0010a240  <none>  051d  RtlVirtualUnwind
+	0010a248  <none>  050e  RtlCaptureContext
+	0010a250  <none>  0205  GetCommandLineW
+	0010a258  <none>  0204  GetCommandLineA
+	0010a260  <none>  02a6  GetModuleFileNameW
+	0010a268  <none>  0308  GetStdHandle
+	0010a270  <none>  03bd  IsProcessorFeaturePresent
+	0010a278  <none>  05dd  TerminateProcess
+	0010a280  <none>  018b  ExitProcess
+	0010a288  <none>  0246  GetCurrentProcess
+	0010a290  <none>  055f  SetEnvironmentVariableW
+	0010a298  <none>  027f  GetFileType
+	0010a2a0  <none>  025f  GetDriveTypeW
+	0010a2a8  <none>  01c8  FlsFree
+	0010a2b0  <none>  01cb  FlsSetValue
+	0010a2b8  <none>  01c9  FlsGetValue
+	0010a2c0  <none>  01c7  FlsAlloc
+	0010a2c8  <none>  057d  SetLastError
+	0010a2d0  <none>  051c  RtlUnwindEx
+	0010a2d8  <none>  0516  RtlLookupFunctionEntry
+	0010a2e0  <none>  049d  RaiseException
+	0010a2e8  <none>  0518  RtlPcToFileHeader
+	0010a2f0  <none>  05bd  SetUnhandledExceptionFilter
+	0010a2f8  <none>  039f  InitializeSListHead
+	0010a300  <none>  031f  GetSystemTimeAsFileTime
+	0010a308  <none>  024b  GetCurrentThreadId
+	0010a310  <none>  0247  GetCurrentProcessId
+	0010a318  <none>  01ef  GetCPInfo
+	0010a320  <none>  030d  GetStringTypeW
+	0010a328  <none>  03e8  LCMapStringEx
+	0010a330  <none>  012d  DecodePointer
+	0010a338  <none>  0158  EncodePointer
+	0010a340  <none>  039c  InitializeCriticalSectionEx
+	0010a348  <none>  0278  GetFileInformationByHandleEx
+	0010a350  <none>  02e9  GetProcessHeap
+	0010a358  <none>  038a  HeapSize
+	0010a360  <none>  0665  WriteFile
+	0010a368  <none>  04ae  ReadFile
+	0010a370  <none>  00eb  CreateFileW
+	0010a378  <none>  037b  GlobalUnlock
+	0010a380  <none>  0374  GlobalLock
+	0010a388  <none>  05cd  Sleep
+	0010a390  <none>  02a5  GetModuleFileNameA
+	0010a398  <none>  0664  WriteConsoleW
+	0010a3a0  <none>  055b  SetEndOfFile
+	0010a3a8  <none>  051b  RtlUnwind
+	0010a3b0  <none>  0025  AreFileApisANSI
+	0010a3b8  <none>  00e1  CreateFile2
+	0010a3c0  <none>  0407  LocalFree
+	0010a3c8  <none>  01d4  FormatMessageA
+	0010a3d0  <none>  0295  GetLocaleInfoEx
+	0010a3d8  <none>  023f  GetCurrentDirectoryW
+	0010a3e0  <none>  01a2  FindClose
+	0010a3e8  <none>  01ad  FindFirstFileW
+	0010a3f0  <none>  01a8  FindFirstFileExW
+	0010a3f8  <none>  01b9  FindNextFileW
+	0010a400  <none>  0272  GetFileAttributesExW
+	0010a408  <none>  028a  GetFullPathNameW
+
+ 0015dfdc	0015e470 00000000 00000000 0015efcc 0010a440
+
+	DLL Name: USER32.dll
+	vma:     Ordinal  Hint  Member-Name  Bound-To
+	0010a440  <none>  01c7  GetRawInputDeviceInfoA
+	0010a448  <none>  0106  EnumDisplayDevicesW
+	0010a450  <none>  010a  EnumDisplaySettingsExW
+	0010a458  <none>  010b  EnumDisplaySettingsW
+	0010a460  <none>  0029  ChangeDisplaySettingsExW
+	0010a468  <none>  03d1  ToUnicode
+	0010a470  <none>  03e5  UnregisterClassW
+	0010a478  <none>  03e6  UnregisterDeviceNotification
+	0010a480  <none>  02fa  RegisterDeviceNotificationW
+	0010a488  <none>  0307  RegisterRawInputDevices
+	0010a490  <none>  01c6  GetRawInputData
+	0010a498  <none>  0199  GetMonitorInfoW
+	0010a4a0  <none>  02a3  MonitorFromWindow
+	0010a4a8  <none>  03ca  SystemParametersInfoW
+	0010a4b0  <none>  0071  CreateIconIndirect
+	0010a4b8  <none>  0270  LoadImageW
+	0010a4c0  <none>  00b6  DestroyIcon
+	0010a4c8  <none>  026c  LoadCursorW
+	0010a4d0  <none>  0137  GetClassLongPtrW
+	0010a4d8  <none>  039d  SetWindowLongW
+	0010a4e0  <none>  01fb  GetWindowLongW
+	0010a4e8  <none>  02cb  PtInRect
+	0010a4f0  <none>  02ae  OffsetRect
+	0010a4f8  <none>  037c  SetRect
+	0010a500  <none>  004f  ClipCursor
+	0010a508  <none>  0410  WindowFromPoint
+	0010a510  <none>  0324  ScreenToClient
+	0010a518  <none>  004e  ClientToScreen
+	0010a520  <none>  014c  GetCursorPos
+	0010a528  <none>  0345  SetCursor
+	0010a530  <none>  0347  SetCursorPos
+	0010a538  <none>  0004  AdjustWindowRectEx
+	0010a540  <none>  0202  GetWindowRect
+	0010a548  <none>  013c  GetClientRect
+	0010a550  <none>  03a5  SetWindowTextW
+	0010a558  <none>  031c  RemovePropW
+	0010a560  <none>  01c9  GetRawInputDeviceList
+	0010a568  <none>  037b  SetPropW
+	0010a570  <none>  0316  ReleaseDC
+	0010a578  <none>  014d  GetDC
+	0010a580  <none>  0356  SetForegroundWindow
+	0010a588  <none>  01d9  GetSystemMetrics
+	0010a590  <none>  02a5  MsgWaitForMultipleObjects
+	0010a598  <none>  0315  ReleaseCapture
+	0010a5a0  <none>  0338  SetCapture
+	0010a5a8  <none>  0290  MapVirtualKeyW
+	0010a5b0  <none>  0174  GetKeyState
+	0010a5b8  <none>  0123  GetActiveWindow
+	0010a5c0  <none>  0354  SetFocus
+	0010a5c8  <none>  00ee  EmptyClipboard
+	0010a5d0  <none>  0340  SetClipboardData
+	0010a5d8  <none>  0263  IsZoomed
+	0010a5e0  <none>  0014  BringWindowToTop
+	0010a5e8  <none>  0248  IsIconic
+	0010a5f0  <none>  0261  IsWindowVisible
+	0010a5f8  <none>  039f  SetWindowPlacement
+	0010a600  <none>  0200  GetWindowPlacement
+	0010a608  <none>  03a0  SetWindowPos
+	0010a610  <none>  02a4  MoveWindow
+	0010a618  <none>  011e  FlashWindow
+	0010a620  <none>  035c  SetLayeredWindowAttributes
+	0010a628  <none>  017d  GetLayeredWindowAttributes
+	0010a630  <none>  03b9  ShowWindow
+	0010a638  <none>  00ba  DestroyWindow
+	0010a640  <none>  007b  CreateWindowExW
+	0010a648  <none>  02f3  RegisterClassExW
+	0010a650  <none>  00ac  DefWindowProcW
+	0010a658  <none>  040b  WaitMessage
+	0010a660  <none>  02c1  PostMessageW
+	0010a668  <none>  0333  SendMessageW
+	0010a670  <none>  0196  GetMessageTime
+	0010a678  <none>  02bd  PeekMessageW
+	0010a680  <none>  00c2  DispatchMessageW
+	0010a688  <none>  03da  TranslateMessage
+	0010a690  <none>  03d3  TrackMouseEvent
+	0010a698  <none>  013f  GetClipboardData
+	0010a6a0  <none>  0050  CloseClipboard
+	0010a6a8  <none>  02af  OpenClipboard
+	0010a6b0  <none>  01c3  GetPropW
+	0010a6b8  <none>  0107  EnumDisplayMonitors
+
+ 0015dff0	0015e030 00000000 00000000 0015f0ba 0010a000
+
+	DLL Name: GDI32.dll
+	vma:     Ordinal  Hint  Member-Name  Bound-To
+	0010a000  <none>  03bd  SwapBuffers
+	0010a008  <none>  03a2  SetPixelFormat
+	0010a010  <none>  0197  DescribePixelFormat
+	0010a018  <none>  0019  ChoosePixelFormat
+	0010a020  <none>  0390  SetDeviceGammaRamp
+	0010a028  <none>  0294  GetDeviceGammaRamp
+	0010a030  <none>  0293  GetDeviceCaps
+	0010a038  <none>  0193  DeleteDC
+	0010a040  <none>  0034  CreateDCW
+	0010a048  <none>  0037  CreateDIBSection
+	0010a050  <none>  0196  DeleteObject
+	0010a058  <none>  0053  CreateRectRgn
+	0010a060  <none>  0029  CreateBitmap
+
+ 0015e004	0015e448 00000000 00000000 0015f108 0010a418
+
+	DLL Name: SHELL32.dll
+	vma:     Ordinal  Hint  Member-Name  Bound-To
+	0010a418  <none>  0026  DragFinish
+	0010a420  <none>  002b  DragQueryPoint
+	0010a428  <none>  002a  DragQueryFileW
+	0010a430  <none>  0025  DragAcceptFiles
+
+ 0015e018	00000000 00000000 00000000 00000000 00000000
+

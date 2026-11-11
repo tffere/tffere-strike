@@ -1,0 +1,32 @@
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/LICENSE-raylib.txt: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/SECURITY.txt: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/READ-ME.txt: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/TffereStrike.exe: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/bot-policy-trained.txt: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/bot-policy-after-100.txt: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/bot-policy-context-v3.txt: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/FONT-LICENSE.txt: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/bot-policy.txt: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/interface.ttf: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/BOT-POLICY.md: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/materials.png: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/footsteps/footstep_concrete_004.ogg: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/footsteps/SHA256SUMS.json: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/footsteps/footstep_concrete_003.ogg: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/footsteps/footstep_concrete_002.ogg: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/footsteps/LICENSE.txt: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/footsteps/footstep_concrete_000.ogg: OK
+/workspace/work/strike-security/v1.8-final/extracted/TffereStrike/assets/footsteps/footstep_concrete_001.ogg: OK
+downloads/TffereStrike-v1.8-Windows-x64.zip: OK
+
+----------- SCAN SUMMARY -----------
+Known viruses: 3628258
+Engine version: 1.5.4
+Scanned directories: 3
+Scanned files: 20
+Infected files: 0
+Data scanned: 11.76 MiB
+Data read: 10.17 MiB (ratio 1.16:1)
+Time: 20.866 sec (0 m 20 s)
+Start Date: 2026:11:11 04:35:27
+End Date:   2026:11:11 04:35:48
