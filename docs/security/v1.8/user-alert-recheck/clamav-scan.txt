@@ -1,0 +1,35 @@
+/workspace/work/strike-security/v1.8-user-alert/extracted/scan-reports/defender-signature-update.txt: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/scan-reports/defender-scan.txt: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/scan-reports/file-hashes.json: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/LICENSE-raylib.txt: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/SECURITY.txt: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/READ-ME.txt: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/TffereStrike.exe: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/bot-policy-trained.txt: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/bot-policy-after-100.txt: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/bot-policy-context-v3.txt: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/FONT-LICENSE.txt: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/bot-policy.txt: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/interface.ttf: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/BOT-POLICY.md: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/materials.png: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/footsteps/footstep_concrete_004.ogg: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/footsteps/SHA256SUMS.json: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/footsteps/footstep_concrete_003.ogg: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/footsteps/footstep_concrete_002.ogg: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/footsteps/LICENSE.txt: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/footsteps/footstep_concrete_000.ogg: OK
+/workspace/work/strike-security/v1.8-user-alert/extracted/TffereStrike/assets/footsteps/footstep_concrete_001.ogg: OK
+/workspace/work/strike-security/v1.8-user-alert/published.zip: OK
+
+----------- SCAN SUMMARY -----------
+Known viruses: 3628258
+Engine version: 1.5.4
+Scanned directories: 5
+Scanned files: 23
+Infected files: 0
+Data scanned: 11.76 MiB
+Data read: 10.17 MiB (ratio 1.16:1)
+Time: 24.089 sec (0 m 24 s)
+Start Date: 2026:11:11 04:39:17
+End Date:   2026:11:11 04:39:41

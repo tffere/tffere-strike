@@ -1,0 +1,21 @@
+{
+  "version": "v1.8",
+  "startedUtc": "2026-11-11T04:39:30.6930743Z",
+  "applicationExecuted": false,
+  "completed": true,
+  "packageSha256": "34FB0CECDDA97ABCC9FE1C221CBA25990FEA9DD9B02D2BE715A01DB5FF330766",
+  "packageChecksumMatches": true,
+  "signatureUpdateCommandSucceeded": true,
+  "defender": {
+    "product": "4.18.26100.4",
+    "signatures": "1.463.235.0",
+    "signatureLastUpdated": "2026-11-10T21:03:57+00:00",
+    "enabled": true
+  },
+  "archiveScanExitCode": 0,
+  "exeSha256": "B4F23A79C9D852CA5CCCF1D7E9FB6FE5817D9B0E4FB7719D4BC0662BD35B2D42",
+  "exeChecksumMatches": true,
+  "authenticodeStatus": "NotSigned",
+  "extractedScanExitCode": 0,
+  "finishedUtc": "2026-11-11T04:39:38.3063090Z"
+}

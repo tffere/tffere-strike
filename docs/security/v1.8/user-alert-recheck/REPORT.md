@@ -1,0 +1,11 @@
+# v1.8 user-alert recheck
+
+User again reported a Windows virus alert, then answered “that is what windows says” when asked whether the wording was “Windows protected your PC.” This suggests SmartScreen reputation warning but does not conclusively establish the complete alert; no exact malware detection name or affected path has been provided. Do not label a possible malware detection a false positive.
+
+Fresh download from the immutable v1.8 tag has ZIP SHA256 34fb0cecdda97abcc9fe1c221cba25990fea9dd9b02d2be715a01db5ff330766. Archive CRC passes; all19 runtime files match the manifest. EXE SHA256 b4f23a79c9d852ca5cccf1d7e9fb6fe5817d9b0e4fb7719d4bc0662bd35b2d42 matches the built/scanned executable.
+
+New exact-package Windows Defender recheck: https://github.com/tffere/tffere-strike/actions/runs/42960633934 . Signature update succeeded; Defender4.18.26100.4/signatures1.463.235.0. Archive and extracted scans each exit0; authenticodestatus NotSigned; applicationExecuted=false. No game execution was performed. ClamAV1.5.4 with main63/daily28179/bytecode339 scanned23 files including reports: zero infected/exit0. Exact logs/result preserved alongside this report.
+
+Rechecked first-party runtime source for process launch, shell execution, download/network, registry persistence and injection calls: none found in that bounded search. Reviewed executable entrypoint/local assets/policy parsing; V3 loader validates dimensions/counts/finite probabilities and bounded row indices. PE enables highentropyASLR/dynamicbase/NX; certificate directory is empty. Source searches and antivirus results are not comprehensive proof of safety.
+
+SmartScreen app-reputation warnings differ from named Defender malware detections. An unsigned publisher/new file may trigger SmartScreen despite clean malware scans. A trusted publisher certificate and release-signing process would be needed to establish signed identity; signing is not a safety guarantee and may not immediately establish reputation. No certificate is available in this project. Do not self-sign as a misleading substitute, change binary bytes to evade detection, or advise disabling protection. No replacement executable was shipped by this recheck. Exact Protection history detection details remain needed if a malware threat is listed.
