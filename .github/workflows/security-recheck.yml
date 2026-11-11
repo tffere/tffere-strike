@@ -30,7 +30,10 @@ jobs:
             if ($env:RECHECK_VERSION -notmatch '^v[0-9]+\.[0-9]+(\.[0-9]+)?$') { throw 'Invalid version' }
             $name = "TffereStrike-$($env:RECHECK_VERSION)-Windows-x64.zip"
             $package = Join-Path "$PWD/downloads" $name
-            $entry = @(Get-Content downloads/SHA256SUMS.txt | Where-Object { $_ -match ('\s+' + [regex]::Escape($name) + '$') })
+            $checksumFile = 'downloads/SHA256SUMS.txt'
+            $versionChecksumFile = "downloads/TffereStrike-$($env:RECHECK_VERSION)-SHA256SUMS.txt"
+            if (Test-Path $versionChecksumFile) { $checksumFile = $versionChecksumFile }
+            $entry = @(Get-Content $checksumFile | Where-Object { $_ -match ('\s+' + [regex]::Escape($name) + '$') })
             if ($entry.Count -ne 1) { throw 'Missing or ambiguous package checksum' }
             $expected = ($entry[0] -split '\s+')[0]
             $actual = (Get-FileHash $package -Algorithm SHA256).Hash
@@ -56,6 +59,7 @@ jobs:
             $result.exeSha256 = (Get-FileHash $exe -Algorithm SHA256).Hash
             $manifest = Get-Content "docs/security/$($env:RECHECK_VERSION)/file-hashes.json" -Raw | ConvertFrom-Json
             $expectedExe = $manifest.'TffereStrike/TffereStrike.exe'
+            if (-not $expectedExe) { $expectedExe = $manifest.'TffereStrike.exe' }
             if ($result.exeSha256 -ne $expectedExe) { throw 'Executable checksum mismatch' }
             $result.exeChecksumMatches = $true
             $result.authenticodeStatus = (Get-AuthenticodeSignature $exe).Status.ToString()
